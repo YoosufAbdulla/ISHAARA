@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ishaara</title>
+<style>
+  :root{ --bg:#0d1015; --panel:#151a21; --panel2:#1b212b; --line:#272e39;
+    --text:#e8edf4; --muted:#8b97a8; --accent:#f4a3ae; --accent2:#7cc6ff; --ok:#5cd6a0; --warn:#ffce7a; --r:16px; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 700px at 50% -10%, #1a2230, var(--bg) 62%); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; min-height:100vh; padding:12px}
+  .wrap{max-width:900px; margin:0 auto}
+  .top{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+  .brand{font-size:16px; font-weight:800}
+  .brand small{font-weight:400; color:var(--muted); font-size:11.5px}
+  .badge{margin-left:auto; font-size:11px; color:var(--muted); border:1px solid var(--line); padding:4px 10px; border-radius:999px}
+  .app{display:grid; grid-template-columns:1fr; gap:12px}
+  @media(min-width:900px){ .app{grid-template-columns:1.05fr 0.95fr; align-items:start} .span{grid-column:1 / -1} }
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:12px}
+  .card h2{margin:0 0 9px; font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; align-items:center}
+  .stage{position:relative; width:100%; aspect-ratio:4/3; background:#000; border-radius:var(--r); overflow:hidden; border:1px solid var(--line)}
+  .stage video,.stage canvas{position:absolute; inset:0; width:100%; height:100%}
+  .stage video{transform:scaleX(-1); object-fit:cover}
+  .chip{position:absolute; top:9px; left:9px; font-size:12px; padding:4px 10px; border-radius:999px; background:rgba(0,0,0,.5); border:1px solid var(--line); color:var(--muted); backdrop-filter:blur(4px)}
+  .chip.ok{color:var(--ok); border-color:#2f6f56} .chip.warn{color:var(--warn)}
+  .now{display:flex; align-items:center; gap:12px}
+  .glyph{font-size:44px; font-weight:700; line-height:1; min-width:52px; text-align:center}
+  .nowinfo{flex:1; min-width:0}
+  .nowlabel{font-size:15px; font-weight:600}
+  .nowsub{font-size:12px; color:var(--muted); margin-top:2px}
+  .conf{height:7px; background:var(--panel2); border-radius:5px; overflow:hidden; margin-top:7px}
+  .conf i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .dir{text-align:center; width:54px}
+  .dir .ar{font-size:24px; color:var(--accent); height:26px}
+  .dir .lb{font-size:10px; color:var(--muted); text-transform:uppercase}
+  .hint{font-size:12.5px; color:var(--muted); text-align:center; margin-top:9px; min-height:16px}
+  .output{direction:rtl; text-align:right; font-size:34px; min-height:46px; line-height:1.3; word-break:break-word}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  button{cursor:pointer; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:14px; font-weight:600; padding:11px 14px; border-radius:11px; flex:1; min-width:74px}
+  button:active{background:#232b36}
+  button.primary{background:var(--accent); color:#3a1e24; border-color:var(--accent); flex:none; padding:13px 26px}
+  select{padding:11px; border-radius:11px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:15px; width:100%}
+  .pub input{width:100%; padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:14px; margin-bottom:8px}
+  .sw{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13.5px; color:var(--muted); padding:7px 2px}
+  .sw + .sw{border-top:1px solid var(--line)}
+  .tg{position:relative; width:44px; height:26px; flex:none}
+  .tg input{opacity:0; width:100%; height:100%; margin:0}
+  .tg .sl{position:absolute; inset:0; background:var(--panel2); border:1px solid var(--line); border-radius:999px; transition:.15s; pointer-events:none}
+  .tg .sl::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#8894a5; transition:.15s}
+  .tg input:checked + .sl{background:rgba(244,163,174,.25); border-color:var(--accent)}
+  .tg input:checked + .sl::after{transform:translateX(18px); background:var(--accent)}
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+  @media(min-width:520px){ .grid{grid-template-columns:repeat(6,1fr)} }
+  .cchip{position:relative; aspect-ratio:1/1; border:1px solid var(--line); border-radius:10px; background:var(--panel2); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden}
+  .cchip.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+  .cchip .ch{font-size:20px} .cchip .n{font-size:10px; color:var(--muted); margin-top:2px}
+  .cchip .bar{position:absolute; bottom:0; left:0; height:3px; background:var(--accent); width:0}
+  .cchip.done .bar{background:var(--ok)}
+  .studio-only{display:none}
+  .foot{font-size:11px; color:#6c7686; text-align:center; margin-top:12px}
+  #overlay{position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; text-align:center; padding:26px; background:rgba(6,8,12,.9); backdrop-filter:blur(4px)}
+  #overlay h1{margin:0; font-size:24px} #overlay p{color:var(--muted); max-width:420px; font-size:14px; line-height:1.55}
+  .status{font-size:12px; color:var(--muted); text-align:center; margin-top:6px}
+  .status.err{color:#ff9aa2} .status.ok{color:var(--ok)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Ishaara<br><small>Dhivehi fingerspelling — live demo</small></div>
+    <div class="badge" id="modeBadge">demo</div>
+    <button id="dataBtn" style="flex:none; padding:8px 12px; font-size:12.5px">Loaded data</button>
+  </div>
+
+  <div class="card" id="dataPanel" style="display:none; margin-bottom:12px">
+    <h2>Loaded data <span id="dataTotal" style="font-weight:400; text-transform:none; color:var(--muted)"></span></h2>
+    <div id="dataList" class="grid"></div>
+  </div>
+
+  <div class="app">
+    <div class="card">
+      <div class="stage">
+        <video id="video" playsinline muted></video>
+        <canvas id="cv"></canvas>
+        <div class="chip" id="chip">—</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div class="card">
+        <h2>Recognising</h2>
+        <div class="now">
+          <div class="glyph" id="glyph">—</div>
+          <div class="nowinfo">
+            <div class="nowlabel" id="nowlabel">show your hand</div>
+            <div class="nowsub" id="nowsub">&nbsp;</div>
+            <div class="conf"><i id="conf"></i></div>
+          </div>
+          <div class="dir"><div class="ar" id="ar">·</div><div class="lb" id="dirlb">—</div></div>
+        </div>
+        <div class="hint" id="hint">&nbsp;</div>
+      </div>
+
+      <div class="card">
+        <h2>Output</h2>
+        <div class="output" id="out"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="space">Space</button><button id="back">⌫</button><button id="clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Settings</h2>
+        <div class="sw"><span>Enable fili (vowel by move-and-hold)</span><label class="tg"><input type="checkbox" id="filiOn" checked><span class="sl"></span></label></div>
+        <div class="sw"><span>Swap L / R direction</span><label class="tg"><input type="checkbox" id="swapLR"><span class="sl"></span></label></div>
+      </div>
+    </div>
+
+    <!-- STUDIO ONLY -->
+    <div class="card studio-only span" id="collectCard">
+      <h2>Collect (studio) <span id="dsInfo" style="font-weight:400; text-transform:none; color:var(--muted)"></span></h2>
+      <div class="grid" id="grid"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="cap" style="flex:1" disabled>Capture pose (hold still)</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="exportBtn">Export</button>
+        <label style="flex:1; text-align:center; border:1px solid var(--line); padding:11px; border-radius:11px; font-weight:600; font-size:14px">Import<input id="importFile" type="file" accept="application/json" style="display:none"></label>
+        <button id="clearAll">Clear all</button>
+      </div>
+    </div>
+
+    <div class="card studio-only span pub" id="publishCard">
+      <h2>Publish to site <span id="pubState" style="font-weight:400;text-transform:none;color:var(--muted)"></span></h2>
+      <div class="row"><div style="flex:1"><input id="ghOwner" placeholder="github username"></div><div style="flex:1"><input id="ghRepo" placeholder="repository name"></div></div>
+      <div class="row"><div style="flex:1"><input id="ghBranch" placeholder="branch (default: main)"></div><div style="flex:1"><input id="ghToken" type="password" placeholder="access token (stays on this device)"></div></div>
+      <div class="row" style="margin-top:2px"><button class="primary" id="publishBtn" style="flex:1">Publish dataset to site</button></div>
+      <div class="status" id="pubStatus" style="text-align:left">Fill in your repo details and token, then publish. The token is stored only in this browser.</div>
+    </div>
+  </div>
+  <div class="status" id="status">Loading…</div>
+  <div class="foot">Runs entirely in your browser · nothing is uploaded</div>
+</div>
+
+<div id="overlay">
+  <h1>Ishaara</h1>
+  <p id="ovtext">Tap start and allow camera access. Hold a handshape to lock it, then move &amp; hold a direction for the vowel (fili).</p>
+  <button id="start" class="primary" disabled>Start camera</button>
+  <div class="status" id="ovstatus">Loading…</div>
+</div>
+
+<script>
+const MODEL = /*__MODEL__*/ null;
+const STUDIO = new URLSearchParams(location.search).has('studio');
+const MOBILE = matchMedia('(max-width:820px)').matches || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+const LETTERS=[['ހ','haa'],['ށ','shaviyani'],['ނ','noonu'],['ރ','raa'],['ބ','baa'],['ޅ','lhaviyani'],
+  ['ކ','kaafu'],['އ','alifu'],['ވ','vaavu'],['މ','meemu'],['ފ','faafu'],['ދ','dhaalu'],['ތ','thaa'],
+  ['ލ','laamu'],['ގ','gaafu'],['ޏ','gnaviyani'],['ސ','seenu'],['ޑ','daviyani'],['ޒ','zaviyani'],
+  ['ޓ','taviyani'],['ޔ','yaa'],['ޕ','paviyani'],['ޖ','javiyani'],['ޗ','chaviyani']];
+const NAME2CH=Object.fromEntries(LETTERS.map(([c,n])=>[n,c]));
+const FILI=[['sukun','ް'],['a','ަ'],['aa','ާ'],['i','ި'],['ee','ީ'],['u','ު'],['oo','ޫ'],['e','ެ'],['ey','ޭ'],['o','ޮ'],['oa','ޯ'],['—','']];
+const dirFili={up:'ަ',down:'ު',left:'ި',right:'ެ',none:'ް'};
+const AR={up:'▲',down:'▼',left:'◀',right:'▶',none:'·'};
+const TARGET=40;
+
+const $=id=>document.getElementById(id);
+const video=$('video'),cv=$('cv'),ctx=cv.getContext('2d');
+const chip=$('chip'),glyph=$('glyph'),nowlabel=$('nowlabel'),nowsub=$('nowsub'),conf=$('conf');
+const ar=$('ar'),dirlb=$('dirlb'),hint=$('hint'),outEl=$('out');
+const filiOn=$('filiOn'),swapLR=$('swapLR'),statusEl=$('status'),ovstatus=$('ovstatus');
+const overlay=$('overlay'),startBtn=$('start');
+function setStatus(t,e){ statusEl.textContent=t; statusEl.classList.toggle('err',!!e); ovstatus.textContent=t; }
+
+$('modeBadge').textContent = STUDIO ? 'studio' : 'demo';
+if(STUDIO){ document.querySelectorAll('.studio-only').forEach(e=>e.style.display=''); }
+
+// ---------- data (studio collect only; recognition uses the bundled model) ----------
+const data={handshapes:[]};
+if(STUDIO){ try{ const s=localStorage.getItem('ishaara-studio'); const o=s&&JSON.parse(s); if(o&&o.handshapes) data.handshapes=o.handshapes; }catch(e){} }
+function persist(){ if(STUDIO){ try{ localStorage.setItem('ishaara-studio',JSON.stringify(data)); }catch(e){} } }
+
+// ---------- recognition (bundled MLP model) ----------
+function relu(a){return a.map(v=>v>0?v:0);}
+function softmax(a){const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s);}
+function dense(x,W,b){return W.map((row,i)=>{let s=b[i];for(let j=0;j<row.length;j++)s+=row[j]*x[j];return s;});}
+function predict(feat){ if(!MODEL) return null; let x=feat.map((v,i)=>(v-MODEL.mean[i])/MODEL.std[i]);
+  for(let l=0;l<MODEL.layers.length;l++){ x=dense(x,MODEL.layers[l].W,MODEL.layers[l].b); x=(l<MODEL.layers.length-1)?relu(x):softmax(x); }
+  let bi=0; for(let i=1;i<x.length;i++) if(x[i]>x[bi])bi=i; return {label:MODEL.labels[bi],conf:x[bi]}; }
+
+// online dataset (committed to the repo) → train-free KNN; falls back to bundled model
+let PUB=null; const K=5,MAXDIST=2.0;
+function knnPredict(feat,set){ const n=set.length; if(!n) return null;
+  const a=new Array(n); for(let i=0;i<n;i++){ const g=set[i].feat; let s=0; for(let j=0;j<63;j++){const d=feat[j]-g[j]; s+=d*d;} a[i]={d:Math.sqrt(s),l:set[i].label}; }
+  a.sort((x,y)=>x.d-y.d); if(a[0].d>MAXDIST) return {label:null,conf:0};
+  const kk=Math.min(K,n),v={}; for(let i=0;i<kk;i++) v[a[i].l]=(v[a[i].l]||0)+1;
+  let best=null,bc=0; for(const l in v) if(v[l]>bc){bc=v[l];best=l;}
+  let din=Infinity,dout=Infinity; for(let i=0;i<n;i++){ if(a[i].l===best){ if(a[i].d<din)din=a[i].d; } else if(a[i].d<dout) dout=a[i].d; }
+  return {label:best, conf: isFinite(dout)?dout/(din+dout):1}; }
+function recognize(feat){
+  if(STUDIO && data.handshapes.length) return knnPredict(feat, data.handshapes); // on-the-go while collecting
+  if(PUB && PUB.length) return knnPredict(feat, PUB);                             // committed online dataset
+  return predict(feat);                                                          // bundled model fallback
+}
+
+function feats(lm){ const v=lm.map(p=>[p.x-lm[0].x,-(p.y-lm[0].y),-(p.z-lm[0].z)]); const r=Math.hypot(v[9][0],v[9][1],v[9][2])||1e-3; const f=[]; v.forEach(p=>f.push(p[0]/r,p[1]/r,p[2]/r)); return f; }
+function dirPoint(lm){ const hx=swapLR.checked?(1-lm[0].x):lm[0].x, hy=1-lm[0].y; const sz=Math.hypot(lm[9].x-lm[0].x,lm[9].y-lm[0].y)||1e-3; return [hx/sz,hy/sz]; }
+
+// ---------- recognizer state machine ----------
+const P={lockConf:0.7,stableN:5,lockStillVel:0.09,neutralR:0.35,dirR:0.70,zoneDwellMs:350,sukunDwellMs:1300,bareDwellMs:450,cooldownMs:550};
+let phase='idle',lastLabel=null,stableCount=0,locked=null,prevPos=null,vel=0,cooldownUntil=0,anchor=null,zone=null,zoneSince=0,anchorPx=null,anchorHandPx=1,curW=0,curH=0,word='';
+function render(){ outEl.textContent=word; }
+$('space').onclick=()=>{word+=' ';render();}; $('back').onclick=()=>{word=[...word].slice(0,-1).join('');render();}; $('clear').onclick=()=>{word='';render();};
+function setPhase(p){ phase=p; chip.textContent=p; chip.className='chip'+(p==='locked'?' ok':(p==='cooldown'?' warn':'')); }
+function nameFor(ch){ const f=FILI.find(x=>x[1]===ch); return f?f[0]:'none'; }
+function resetRec(){ phase='idle';locked=null;anchor=null;anchorPx=null;zone=null;stableCount=0;lastLabel=null;conf.style.width='0'; }
+function zoneOf(dx,dy){ const m=Math.hypot(dx,dy); if(m<P.neutralR)return'none'; if(m<P.dirR)return'arming'; return Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'up':'down'); }
+function commit(dir){ const c=NAME2CH[locked]||'?'; const fili=(filiOn.checked&&dir!=='bare')?(dirFili[dir]??''):''; word+=c+fili; render(); hint.textContent=`added ${locked}${dir==='bare'?'':' + '+(dir==='none'?'sukun':dir)}`; resetRec(); setPhase('cooldown'); cooldownUntil=performance.now()+P.cooldownMs; }
+
+function updateNow(pr){
+  if(pr===null){ glyph.textContent='—'; nowlabel.textContent='no data loaded yet'; nowsub.innerHTML='&nbsp;'; conf.style.width='0'; return; }
+  if(!pr.label){ glyph.textContent='?'; nowlabel.textContent='unknown shape'; nowsub.innerHTML='&nbsp;'; conf.style.width='0'; return; }
+  glyph.textContent=NAME2CH[pr.label]||'—'; nowlabel.textContent=pr.label; nowsub.textContent='confidence '+(pr.conf*100).toFixed(0)+'%'; conf.style.width=(pr.conf*100)+'%';
+}
+function step(lm,now){
+  const pos=dirPoint(lm); if(prevPos){ const d=Math.hypot(pos[0]-prevPos[0],pos[1]-prevPos[1]); vel=vel*0.5+d*0.5; } prevPos=pos;
+  const pr=recognize(feats(lm)); updateNow(pr);
+  if(phase==='cooldown'){ dirlb.textContent='…'; ar.textContent='·'; if(now>cooldownUntil) setPhase('idle'); return; }
+  if(pr===null){ hint.textContent = STUDIO ? 'no data yet — collect samples below' : 'no data published yet'; return; }
+  if(!pr.label){ hint.textContent='hold a learned handshape'; return; }
+  if(pr.label===lastLabel) stableCount++; else{ stableCount=0; lastLabel=pr.label; }
+  if(phase==='idle'){ dirlb.textContent='shape'; ar.textContent='·'; hint.textContent='hold the handshape steady…';
+    if(pr.conf>=P.lockConf&&stableCount>=P.stableN&&vel<P.lockStillVel){ locked=pr.label; anchor=pos.slice(); zone=null; setPhase('locked'); anchorPx=[(1-lm[0].x)*curW,lm[0].y*curH]; anchorHandPx=Math.hypot((lm[9].x-lm[0].x)*curW,(lm[9].y-lm[0].y)*curH)||1; } }
+  else if(phase==='locked'){
+    if(!filiOn.checked){ ar.textContent='·'; dirlb.textContent='hold';
+      if(vel<P.lockStillVel){ if(zone!=='bare'){zone='bare';zoneSince=now;} const h=now-zoneSince; conf.style.width=Math.min(100,h/P.bareDwellMs*100)+'%'; hint.textContent=`hold to add ${locked}`; if(h>=P.bareDwellMs) commit('bare'); } else zone=null; return; }
+    const dx=pos[0]-anchor[0], dy=pos[1]-anchor[1], z=zoneOf(dx,dy);
+    ar.textContent=(z==='none'||z==='arming')?'·':AR[z]; dirlb.textContent=z==='arming'?'move':z;
+    if(z==='none'){ if(zone!=='none'||vel>=P.lockStillVel){zone='none';zoneSince=now;} const h=now-zoneSince; conf.style.width=Math.min(100,h/P.sukunDwellMs*100)+'%'; hint.textContent=`locked ${locked} — move a direction, or hold for sukun`; if(h>=P.sukunDwellMs) commit('none'); }
+    else if(z==='arming'){ zone='arming'; conf.style.width='0'; hint.textContent='keep moving outward'; }
+    else { if(zone!==z){zone=z;zoneSince=now;} const h=now-zoneSince; conf.style.width=Math.min(100,h/P.zoneDwellMs*100)+'%'; hint.textContent=`${z} — hold to commit (${locked} + ${nameFor(dirFili[z])})`; if(h>=P.zoneDwellMs) commit(z); }
+  }
+}
+
+// ---------- drawing ----------
+const EDGES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function draw(lm){ const w=cv.width=cv.clientWidth,h=cv.height=cv.clientHeight; curW=w;curH=h; ctx.clearRect(0,0,w,h); if(!lm)return; const X=p=>(1-p.x)*w,Y=p=>p.y*h;
+  ctx.strokeStyle='rgba(244,163,174,.9)'; ctx.lineWidth=3; EDGES.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(X(lm[a]),Y(lm[a]));ctx.lineTo(X(lm[b]),Y(lm[b]));ctx.stroke();});
+  ctx.fillStyle='#fff'; lm.forEach(p=>{ctx.beginPath();ctx.arc(X(p),Y(p),3.4,0,7);ctx.fill();}); }
+function drawGuide(lm){ if(phase!=='locked'||!anchorPx||!filiOn.checked)return; const wx=(1-lm[0].x)*curW,wy=lm[0].y*curH;
+  ctx.setLineDash([6,6]); ctx.lineWidth=2; ctx.strokeStyle='rgba(148,161,178,.55)'; ctx.beginPath();ctx.arc(anchorPx[0],anchorPx[1],P.neutralR*anchorHandPx,0,7);ctx.stroke();
+  ctx.strokeStyle='rgba(244,163,174,.7)'; ctx.beginPath();ctx.arc(anchorPx[0],anchorPx[1],P.dirR*anchorHandPx,0,7);ctx.stroke();
+  ctx.setLineDash([]); ctx.strokeStyle='rgba(244,163,174,.95)'; ctx.lineWidth=3; ctx.beginPath();ctx.moveTo(anchorPx[0],anchorPx[1]);ctx.lineTo(wx,wy);ctx.stroke(); }
+
+// ---------- collect (studio) ----------
+let curLetter='haa',latest=null,shapeCap=null;
+if(STUDIO){
+  const grid=$('grid'),chips={};
+  LETTERS.forEach(([ch,n])=>{ const c=document.createElement('div'); c.className='cchip'; c.innerHTML=`<div class="ch">${ch}</div><div class="n">0</div><div class="bar"></div>`; c.onclick=()=>{curLetter=n; Object.values(chips).forEach(e=>e.classList.remove('sel')); c.classList.add('sel');}; grid.appendChild(c); chips[n]=c; });
+  chips['haa'].classList.add('sel');
+  window._renderCounts=()=>{ const cnt={}; data.handshapes.forEach(h=>cnt[h.label]=(cnt[h.label]||0)+1); let learned=0; LETTERS.forEach(([ch,n])=>{ const e=chips[n],v=cnt[n]||0; if(v)learned++; e.querySelector('.n').textContent=v; e.querySelector('.bar').style.width=Math.min(100,v/TARGET*100)+'%'; e.classList.toggle('done',v>=TARGET); }); $('dsInfo').textContent=`· ${data.handshapes.length} samples · ${learned}/24`; };
+  _renderCounts();
+  $('cap').onclick=()=>{ if(!latest){setStatus('No hand visible.',true);return;} shapeCap={label:curLetter,left:30}; setStatus('Capturing “'+curLetter+'”…'); };
+  $('exportBtn').onclick=()=>{ const b=new Blob([JSON.stringify({handshapes:data.handshapes})],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ishaara-dataset.json'; a.click(); };
+  $('importFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); if(o.handshapes){ data.handshapes=o.handshapes; _renderCounts(); persist(); setStatus('Imported '+data.handshapes.length+' samples.'); } }catch(err){ setStatus('Bad file.',true);} }; r.readAsText(f); };
+  $('clearAll').onclick=()=>{ if(confirm('Clear all collected samples?')){ data.handshapes=[]; _renderCounts(); persist(); } };
+}
+function collectFrame(lm){ if(!shapeCap)return; data.handshapes.push({label:shapeCap.label,feat:feats(lm)}); if(--shapeCap.left<=0){ setStatus('Saved 30 for “'+shapeCap.label+'”.'); shapeCap=null; _renderCounts&&_renderCounts(); persist(); } }
+
+// ---------- publish to GitHub (studio only) ----------
+if(STUDIO){
+  const gf={owner:$('ghOwner'),repo:$('ghRepo'),branch:$('ghBranch'),token:$('ghToken')};
+  const K={owner:'gh_owner',repo:'gh_repo',branch:'gh_branch',token:'gh_token'};
+  Object.keys(gf).forEach(k=>{ try{ gf[k].value=localStorage.getItem(K[k])||''; }catch(e){} gf[k].addEventListener('change',()=>{ try{ localStorage.setItem(K[k],gf[k].value.trim()); }catch(e){} }); });
+  const pst=$('pubStatus');
+  function pset(t,cls){ pst.textContent=t; pst.className='status'+(cls?(' '+cls):''); pst.style.textAlign='left'; }
+  function b64(str){ return btoa(unescape(encodeURIComponent(str))); }
+  $('publishBtn').onclick=async()=>{
+    const owner=gf.owner.value.trim(), repo=gf.repo.value.trim(), branch=(gf.branch.value.trim()||'main'), token=gf.token.value.trim();
+    if(!owner||!repo||!token){ pset('Enter your github username, repo, and token.','err'); return; }
+    if(!data.handshapes.length){ pset('No samples to publish — collect some first.','err'); return; }
+    Object.keys(gf).forEach(k=>{ try{ localStorage.setItem(K[k],gf[k].value.trim()); }catch(e){} });
+    const api=`https://api.github.com/repos/${owner}/${repo}/contents/dataset.json`;
+    const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json'};
+    pset('Publishing…');
+    try{
+      let sha; const g=await fetch(api+'?ref='+encodeURIComponent(branch),{headers}); if(g.ok){ sha=(await g.json()).sha; }
+      const body={message:'Update dataset ('+data.handshapes.length+' samples)',content:b64(JSON.stringify({handshapes:data.handshapes})),branch}; if(sha) body.sha=sha;
+      const p=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+      if(p.ok){ pset('Published ✓ — live site updates in ~1 minute ('+data.handshapes.length+' samples).','ok'); }
+      else { const e=await p.json().catch(()=>({})); pset('Failed: '+(e.message||p.status)+'. Check repo name, branch, and token permissions.','err'); }
+    }catch(err){ pset('Network error: '+err.message,'err'); }
+  };
+}
+
+// ---------- loaded-data viewer (both modes) ----------
+const dataBtn=$('dataBtn'), dataPanel=$('dataPanel');
+function activeCounts(){
+  const set=(STUDIO && data.handshapes.length) ? data.handshapes : (PUB && PUB.length ? PUB : null);
+  if(set){ const c={}; set.forEach(h=>c[h.label]=(c[h.label]||0)+1); return {mode:'samples',counts:c,total:set.length}; }
+  return {mode:'model',labels:(MODEL&&MODEL.labels)||[]};
+}
+function chipEl(ch,val){ const d=document.createElement('div'); d.className='cchip'; d.style.cursor='default';
+  d.innerHTML=`<div class="ch">${ch}</div><div class="n">${val}</div>`; return d; }
+function fillData(){
+  const list=$('dataList'); list.innerHTML=''; const a=activeCounts();
+  if(a.mode==='samples'){ $('dataTotal').textContent=`· ${a.total} samples · ${Object.keys(a.counts).length} letters`;
+    LETTERS.forEach(([ch,n])=>{ if(a.counts[n]) list.appendChild(chipEl(ch,a.counts[n])); }); }
+  else if(a.labels.length){ $('dataTotal').textContent='· model'; a.labels.forEach(n=>list.appendChild(chipEl(NAME2CH[n]||'?','✓'))); }
+  else { $('dataTotal').textContent='· nothing loaded yet'; }
+}
+dataBtn.onclick=()=>{ const show=dataPanel.style.display==='none'; if(show) fillData(); dataPanel.style.display=show?'':'none'; };
+
+// ---------- MediaPipe + camera ----------
+let hands, running=false, sending=false;
+function onResults(res){ const has=res.multiHandLandmarks&&res.multiHandLandmarks.length; const lm=has?res.multiHandLandmarks[0]:null; latest=lm; draw(lm);
+  if(STUDIO) $('cap').disabled=!has;
+  if(!lm){ glyph.textContent='—'; nowlabel.textContent='show your hand'; conf.style.width='0'; prevPos=null; ar.textContent='·'; dirlb.textContent='—'; if(phase==='locked'){resetRec(); hint.textContent='lock cancelled';} return; }
+  if(STUDIO && shapeCap){ collectFrame(lm); }
+  step(lm,performance.now()); drawGuide(lm);
+}
+async function pump(){ if(running && !sending && video.readyState>=2){ sending=true; try{ await hands.send({image:video}); }catch(e){} sending=false; } requestAnimationFrame(pump); }
+function loadScript(urls){return new Promise((res,rej)=>{let i=0;const t=()=>{if(i>=urls.length)return rej(new Error('load fail'));const s=document.createElement('script');s.src=urls[i++];s.onload=()=>res();s.onerror=t;document.head.appendChild(s);};t();});}
+async function boot(){
+  try{ setStatus('Loading hand tracker…');
+    await loadScript(['https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js','https://unpkg.com/@mediapipe/hands/hands.js']);
+    hands=new window.Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    hands.setOptions({maxNumHands:1,modelComplexity:MOBILE?0:1,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+    hands.onResults(onResults);
+    try{ const r=await fetch('dataset.json',{cache:'no-store'}); if(r.ok){ const o=await r.json(); if(o&&o.handshapes&&o.handshapes.length){ PUB=o.handshapes; } } }catch(e){}
+    setStatus('Ready — start camera'); startBtn.disabled=false;
+  }catch(e){ $('ovtext').innerHTML='Could not load libraries. Check your connection and reload.'; setStatus('Load failed',true); }
+}
+startBtn.onclick=async()=>{
+  try{ setStatus('Starting camera…');
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
+    video.srcObject=stream; await video.play(); running=true; pump(); overlay.style.display='none'; setStatus('Camera on'); setPhase('idle'); render();
+  }catch(e){ $('ovtext').innerHTML='Camera failed: '+e.message+'. Allow camera access and reload.'; setStatus('Camera error',true); }
+};
+boot();
+</script>
+</body>
+</html>
