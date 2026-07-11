@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ishaara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Noto+Sans+Thaana:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --line:#2c2c32; --text:#f3f4f6; --muted:#9a9aa4; --accent:#ffffff; --r:16px;
+    --thaana:"Noto Sans Thaana",sans-serif; --wordmark:"Syne",-apple-system,sans-serif;
+    --glass:rgba(20,20,25,.55);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{background:radial-gradient(1200px 800px at 50% -20%, #1a1a1e, var(--bg) 60%); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; min-height:100vh; padding:16px 14px 30px; font-size:15px; line-height:1.4}
+  .wrap{max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:11px; animation:fadeup .45s ease both}
+  @keyframes fadeup{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+  .app{display:grid; gap:16px 11px}
+  .a-cam{grid-area:cam}.a-set{grid-area:set}.a-cap{grid-area:cap}.a-rec{grid-area:rec}.a-pipe{grid-area:pipe}.a-help{grid-area:help}.a-dash{grid-area:dash}.a-hist{grid-area:hist}.a-full{grid-column:1/-1}
+  @media(min-width:760px){
+    .app{align-items:stretch}
+    body.tab-recog .app{grid-template-columns:1fr 1fr; grid-template-areas:"cam cam" "rec pipe" "help help" "dash dash"}
+    body.tab-collect .app{grid-template-columns:1.55fr 1fr; grid-template-areas:"cam cap" "pipe pipe" "hist hist"}
+  }
+  @media(max-width:759px){ .app{grid-template-columns:1fr !important; grid-template-areas:none !important} .app>*{grid-column:auto !important; grid-area:auto !important} }
+  .top{display:flex; align-items:center; gap:10px}
+  .brand-logo{display:flex; align-items:baseline; gap:9px}
+  .brand-logo .en{font-family:var(--wordmark); font-weight:800; letter-spacing:.1em; font-size:17px; color:#fff}
+  .brand-logo .dv{font-family:var(--thaana); font-size:20px; color:var(--muted); line-height:1}
+  .badge{margin-left:auto; font-size:10.5px; color:var(--muted); border:1px solid var(--line); padding:5px 11px; border-radius:999px; text-transform:uppercase; letter-spacing:.5px}
+  .tabs{display:flex; background:rgba(28,28,34,.5); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:3px; gap:3px}
+  .tabs button{flex:1; border:none; background:transparent; color:var(--muted); padding:11px; border-radius:9px; font-weight:700; font-size:14px; cursor:pointer; transition:.15s}
+  .tabs button.on{background:var(--accent); color:#0a0a0b}
+  .card{background:var(--glass); backdrop-filter:blur(16px) saturate(1.2); -webkit-backdrop-filter:blur(16px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09); border-radius:var(--r); padding:14px 15px;
+    box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 12px 34px -14px rgba(0,0,0,.55); transition:border-color .15s;
+    display:flex; flex-direction:column; justify-content:center}
+  .card h2{margin:0 0 10px; font-size:11px; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); font-weight:700; display:flex; justify-content:space-between; align-items:center; gap:8px}
+  .camcard{padding:0; overflow:hidden; background:rgba(8,8,10,.6); justify-content:flex-start}
+  @media(min-width:760px){ body.tab-recog .a-cam .stage{max-height:300px} }
+  #capGrid .cchip .ch{font-size:19px} #capGrid .cchip .n{font-size:10px}
+  .stage{position:relative; width:100%; aspect-ratio:16/9; background:#050506; overflow:hidden}
+  .stage video,.stage canvas{position:absolute; inset:0; width:100%; height:100%}
+  .stage video{transform:scaleX(-1); object-fit:cover}
+  .chip{position:absolute; top:10px; left:10px; font-size:11.5px; padding:5px 11px; border-radius:999px; background:rgba(0,0,0,.5); border:1px solid var(--line); color:var(--muted); backdrop-filter:blur(6px); text-transform:capitalize}
+  .chip.ok{color:#fff; border-color:rgba(255,255,255,.45)}
+  .previewNote{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; text-align:center; padding:20px}
+  .sw{display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px; padding:7px 2px}
+  .sw span{color:var(--muted)}
+  .sw + .sw{border-top:1px solid var(--line)}
+  .tg{position:relative; width:46px; height:27px; flex:none}
+  .tg input{opacity:0; width:100%; height:100%; margin:0}
+  .tg .sl{position:absolute; inset:0; background:rgba(255,255,255,.08); border:1px solid var(--line); border-radius:999px; transition:.15s; pointer-events:none}
+  .tg .sl::after{content:""; position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%; background:#8894a5; transition:.15s}
+  .tg input:checked + .sl{background:rgba(255,255,255,.22); border-color:var(--accent)}
+  .tg input:checked + .sl::after{transform:translateX(19px); background:#fff}
+  /* ML pipeline */
+  .pipe .prow{display:flex; align-items:center; gap:6px}
+  .node{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap; opacity:.5; transition:.2s}
+  .node.on{opacity:1; color:#fff}
+  .node .dot{width:9px; height:9px; border-radius:50%; background:#3a3a42; transition:.2s}
+  .node.on .dot{background:#fff; box-shadow:0 0 10px rgba(255,255,255,.6); animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1); opacity:1} 50%{transform:scale(1.35); opacity:.7}}
+  .pline{flex:1; height:2px; background:linear-gradient(90deg,#2c2c32,#3a3a42); border-radius:2px}
+  .pstat{font-size:12.5px; color:var(--muted); margin-top:10px; min-height:16px}
+  .pstat b{color:#fff}
+  /* recognised */
+  .now{display:flex; align-items:center; gap:14px}
+  .glyph{font-family:var(--thaana); font-size:56px; font-weight:600; line-height:1; min-width:66px; text-align:center; color:#fff}
+  .nowinfo{flex:1; min-width:0}
+  .nowlabel{font-size:15px; font-weight:600}
+  .nowsub{font-size:12px; color:var(--muted); margin-top:2px}
+  .conf{height:8px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden; margin-top:9px}
+  .conf i{display:block; height:100%; width:0; background:var(--accent); transition:width .09s linear}
+  .dir{text-align:center; width:52px; flex:none}
+  .dir .ar{font-size:26px; color:var(--accent); height:28px; line-height:1}
+  .dir .lb{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px}
+  .hint{font-size:12.5px; color:var(--muted); text-align:center; margin-top:11px; min-height:16px}
+  .output{font-family:var(--thaana); direction:rtl; text-align:right; font-size:34px; min-height:48px; line-height:1.4; word-break:break-word; padding:2px}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  button{cursor:pointer; border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--text); font-size:14px; font-weight:600; padding:12px 14px; border-radius:12px; flex:1; min-width:70px; transition:.12s}
+  button:hover{border-color:#44444c} button:active{background:rgba(255,255,255,.1)}
+  button.primary{background:var(--accent); color:#0a0a0b; border-color:var(--accent); flex:none; padding:13px 26px}
+  button:disabled{opacity:.45; cursor:default}
+  .helpTitle{text-align:center; padding:2px 0 4px}
+  .helpTitle .t{font-family:var(--wordmark); font-size:19px; font-weight:700; color:#fff}
+  .helpTitle .s{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .grid{display:grid; grid-template-columns:repeat(6,1fr); gap:7px}
+  @media(max-width:430px){ .grid{grid-template-columns:repeat(5,1fr)} }
+  .cchip{position:relative; aspect-ratio:1/1; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.03); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; transition:background .12s,border-color .12s,box-shadow .12s}
+  .cchip .ch{font-family:var(--thaana); font-size:22px; line-height:1} .cchip .n{font-size:10.5px; color:var(--muted); margin-top:3px}
+  .cchip .bar{position:absolute; bottom:0; left:0; height:3px; background:var(--accent); width:0}
+  .cchip.done .bar{height:4px}
+  body.tab-collect .cchip.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+  .cchip.lit{background:var(--accent); border-color:var(--accent); box-shadow:0 0 18px rgba(255,255,255,.4)}
+  .cchip.lit .ch,.cchip.lit .n{color:#0a0a0b}
+  .prog{margin-top:12px}
+  .prog .lab{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:6px}
+  .obar{height:9px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden}
+  .obar i{display:block; height:100%; width:0; background:var(--accent); transition:width .3s}
+  /* history */
+  .hrow{display:flex; align-items:center; gap:10px; padding:8px 2px; font-size:14px}
+  .hrow + .hrow{border-top:1px solid var(--line)}
+  .hrow .hg{font-family:var(--thaana); font-size:22px; width:30px; text-align:center}
+  .hrow .hn{flex:1; color:var(--muted); font-size:13px}
+  .hrow .ht{color:var(--muted); font-size:12px}
+  .hrow .hc{font-weight:700}
+  .empty{color:var(--muted); font-size:13px; padding:6px 2px}
+  .footer{text-align:center; margin-top:6px; padding-top:6px}
+  .footer .love{font-size:13px; color:var(--text)} .footer .love b{font-weight:700}
+  .footer .credit{font-size:11.5px; color:#6c6c78; margin-top:4px}
+  .only-recog,.only-collect{display:none}
+  body.tab-recog .only-recog{display:block} body.tab-collect .only-collect{display:block}
+  body:not(.studio) .studio-only{display:none}
+  body:not(.show-output) .outputCard{display:none}
+  .status{font-size:12px; color:var(--muted); text-align:center}
+  .status.err{color:#ff9aa2} .status.ok{color:#fff}
+  .cog{flex:none; width:38px; height:38px; padding:0; min-width:0; border-radius:11px; display:flex; align-items:center; justify-content:center; color:var(--text)}
+  .cog svg{width:18px; height:18px}
+  .modal{position:fixed; inset:0; z-index:35; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.55); backdrop-filter:blur(4px)}
+  .modal.open{display:flex}
+  .modal .sheet{width:100%; max-width:400px; background:rgba(18,18,22,.94); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px 18px; box-shadow:0 24px 60px -20px #000}
+  .modalh{display:flex; justify-content:space-between; align-items:center; font-size:12px; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); font-weight:700; margin:0 0 6px}
+  .modalh .x{flex:none; width:30px; height:30px; padding:0; min-width:0; border-radius:8px; font-size:13px}
+  /* background streams */
+  #bg{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none}
+  #bg .field{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-45deg); display:flex; gap:28px}
+  #bg .stream{width:22px; height:210vmax; overflow:hidden}
+  #bg .col{display:flex; flex-direction:column; align-items:center; animation:flow linear infinite; will-change:transform}
+  #bg .col span{font-family:var(--thaana); font-size:22px; line-height:1.6; color:rgba(255,255,255,.055)}
+  @keyframes flow{from{transform:translateY(-50%)} to{transform:translateY(0)}}
+  #overlay{position:fixed; inset:0; z-index:40; display:flex; flex-direction:column; gap:16px; align-items:center; justify-content:center; text-align:center; padding:26px; background:rgba(6,6,8,.86); backdrop-filter:blur(14px)}
+  #overlay p{color:var(--muted); max-width:420px; font-size:14px; line-height:1.6}
+  .logo{text-align:center; line-height:1}
+  .logo .en{font-family:var(--wordmark); font-weight:800; letter-spacing:.1em; padding-left:.1em; font-size:clamp(34px,9vw,60px); color:#fff}
+  .logo .dv{font-family:var(--thaana); direction:rtl; margin-top:16px; font-size:clamp(36px,10vw,62px); font-weight:400; color:#eceef2}
+  .logo .dv b{font-weight:400; border-bottom:2px solid rgba(255,255,255,.3); padding-bottom:6px}
+</style>
+</head>
+<body class="tab-recog">
+<div id="bg" aria-hidden="true"></div>
+<div class="wrap">
+  <div class="top">
+    <div class="brand-logo"><span class="en">ISHAARA</span><span class="dv">އިޝާރާ</span></div>
+    <div class="badge" id="modeBadge">demo</div>
+    <button id="cogBtn" class="cog" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+  <div class="tabs"><button id="tabRecog" class="on">Recognise</button><button id="tabCollect">Collect</button></div>
+
+  <div class="app">
+  <!-- camera -->
+  <div class="card camcard a-cam">
+    <div class="stage">
+      <video id="video" playsinline muted></video>
+      <canvas id="cv"></canvas>
+      <div class="chip" id="chip">—</div>
+      <div class="previewNote" id="previewNote" style="display:none">Preview mode — camera disabled</div>
+    </div>
+  </div>
+
+  <!-- capture (collect) — own letter grid -->
+  <div class="card only-collect a-cap">
+    <h2>Capture a letter <span id="capTotal" style="font-weight:400;text-transform:none;color:var(--muted)"></span></h2>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 11px">Tap a letter, hold the shape, then capture (30 samples per press).</p>
+    <div class="grid" id="capGrid"></div>
+    <div class="prog"><div class="lab"><span>Progress to goal</span><span id="goalTxt2"></span></div><div class="obar"><i id="capBar"></i></div></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="cap" style="flex:1" disabled>Capture “<span id="capLetter">haa</span>”</button></div>
+  </div>
+
+  <!-- recognised letter (recognise) -->
+  <div class="card only-recog a-rec">
+    <h2>Recognised letter</h2>
+    <div class="now">
+      <div class="glyph" id="glyph">—</div>
+      <div class="nowinfo"><div class="nowlabel" id="nowlabel">show your hand</div><div class="nowsub" id="nowsub">&nbsp;</div><div class="conf"><i id="conf"></i></div></div>
+      <div class="dir"><div class="ar" id="ar">·</div><div class="lb" id="dirlb">—</div></div>
+    </div>
+    <div class="hint" id="hint">&nbsp;</div>
+  </div>
+
+  <!-- ML pipeline -->
+  <div class="card pipe a-pipe">
+    <h2>Model pipeline</h2>
+    <div class="prow">
+      <div class="node" id="pn0"><span class="dot"></span>Camera</div><div class="pline"></div>
+      <div class="node" id="pn1"><span class="dot"></span>Landmarks</div><div class="pline"></div>
+      <div class="node" id="pn2"><span class="dot"></span>Features</div><div class="pline"></div>
+      <div class="node" id="pn3"><span class="dot"></span>Classify</div>
+    </div>
+    <div class="pstat" id="pstat">waiting…</div>
+  </div>
+
+  <!-- help title (recognise) -->
+  <div class="helpTitle only-recog a-help"><div class="t">Help us make ISHAARA more accurate</div><div class="s">Every sample improves recognition</div></div>
+
+  <!-- dashboard + progress (recognise) -->
+  <div class="card a-dash only-recog" id="dashCard">
+    <h2>All letters <span id="dashTotal" style="font-weight:400;text-transform:none;color:var(--muted)"></span></h2>
+    <div class="grid" id="dashGrid"></div>
+    <div class="prog"><div class="lab"><span>Progress to goal</span><span id="goalTxt"></span></div><div class="obar"><i id="overallBar"></i></div></div>
+  </div>
+
+  <!-- history (collect) -->
+  <div class="card only-collect a-hist">
+    <h2>Recent samples <button id="exportBtn" style="flex:none;padding:7px 12px;font-size:12px">Export</button></h2>
+    <div id="history"><div class="empty">No samples captured yet.</div></div>
+  </div>
+
+  <!-- output (toggle) -->
+  <div class="card outputCard a-full">
+    <h2>Output</h2>
+    <div class="output" id="out"></div>
+    <div class="row" style="margin-top:10px"><button id="space">Space</button><button id="back">⌫</button><button id="clear">Clear</button></div>
+  </div>
+
+  <!-- publish (studio) -->
+  <div class="card studio-only a-full" id="publishCard">
+    <h2>Publish to site</h2>
+    <div class="row"><div style="flex:1"><input id="ghOwner" placeholder="github username" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div><div style="flex:1"><input id="ghRepo" placeholder="repository" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div></div>
+    <div class="row" style="margin-top:8px"><div style="flex:1"><input id="ghBranch" placeholder="branch (main)" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div><div style="flex:1"><input id="ghToken" type="password" placeholder="token (stays on device)" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div></div>
+    <div class="row" style="margin-top:8px"><button class="primary" id="publishBtn" style="flex:1">Publish dataset to site</button></div>
+    <div class="status" id="pubStatus" style="text-align:left;margin-top:8px">Token is stored only in this browser.</div>
+  </div>
+  </div><!-- /app -->
+
+  <div class="status" id="status">Loading…</div>
+
+  <!-- footer -->
+  <div class="footer">
+    <div class="love">Made with ♥ by <b>12S3</b></div>
+    <div class="credit">Built with Claude Code · Google MediaPipe</div>
+  </div>
+</div>
+
+<div id="setPop" class="modal"><div class="sheet">
+  <div class="modalh">Settings <button class="x" id="setClose">✕</button></div>
+  <div class="sw"><span>Show output text</span><label class="tg"><input type="checkbox" id="outputOn"><span class="sl"></span></label></div>
+  <div class="sw"><span>Enable fili (vowel by move-and-hold)</span><label class="tg"><input type="checkbox" id="filiOn"><span class="sl"></span></label></div>
+  <div class="sw"><span>Swap L / R direction</span><label class="tg"><input type="checkbox" id="swapLR"><span class="sl"></span></label></div>
+</div></div>
+
+<div id="overlay">
+  <div class="logo"><div class="en">ISHAARA</div><div class="dv"><b>އިޝާރާ</b></div></div>
+  <p id="ovtext">Live Dhivehi fingerspelling, recognised from your camera. Everything runs on your device.</p>
+  <button id="start" class="primary" disabled>Allow camera</button>
+  <div class="status" id="ovstatus">Loading…</div>
+</div>
+
+<script>
+const PREVIEW = location.search.includes('preview');
+const STUDIO = new URLSearchParams(location.search).has('studio');
+const MOBILE = matchMedia('(max-width:640px)').matches || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const TARGET = 300, GOAL = 24*TARGET;
+const LETTERS=[['ހ','haa'],['ށ','shaviyani'],['ނ','noonu'],['ރ','raa'],['ބ','baa'],['ޅ','lhaviyani'],
+  ['ކ','kaafu'],['އ','alifu'],['ވ','vaavu'],['މ','meemu'],['ފ','faafu'],['ދ','dhaalu'],['ތ','thaa'],
+  ['ލ','laamu'],['ގ','gaafu'],['ޏ','gnaviyani'],['ސ','seenu'],['ޑ','daviyani'],['ޒ','zaviyani'],
+  ['ޓ','taviyani'],['ޔ','yaa'],['ޕ','paviyani'],['ޖ','javiyani'],['ޗ','chaviyani']];
+const NAME2CH=Object.fromEntries(LETTERS.map(([c,n])=>[n,c]));
+const FILI=[['sukun','ް'],['a','ަ'],['i','ި'],['u','ު'],['e','ެ'],['o','ޮ'],['—','']];
+const dirFili={up:'ަ',down:'ު',left:'ި',right:'ެ',none:'ް'};
+const AR={up:'▲',down:'▼',left:'◀',right:'▶',none:'·'};
+const $=id=>document.getElementById(id);
+const video=$('video'),cv=$('cv'),ctx=cv.getContext('2d');
+const filiOn=$('filiOn'),outputOn=$('outputOn'),swapLR=$('swapLR');
+const chip=$('chip'),glyph=$('glyph'),nowlabel=$('nowlabel'),nowsub=$('nowsub'),conf=$('conf'),ar=$('ar'),dirlb=$('dirlb'),hint=$('hint'),outEl=$('out');
+const statusEl=$('status'),ovstatus=$('ovstatus'),overlay=$('overlay'),startBtn=$('start'),pstat=$('pstat');
+function setStatus(t,e){ statusEl.textContent=t; statusEl.classList.toggle('err',!!e); ovstatus.textContent=t; }
+$('modeBadge').textContent = STUDIO?'studio':(PREVIEW?'preview':'demo');
+if(STUDIO) document.body.classList.add('studio');
+
+// ---------- data + history ----------
+const data={handshapes:[]}; let PUB=null, history=[];
+try{ const s=localStorage.getItem('ishaara-data'); const o=s&&JSON.parse(s); if(o&&o.handshapes) data.handshapes=o.handshapes; if(o&&o.history) history=o.history; }catch(e){}
+if(PREVIEW && !data.handshapes.length){ const seed={haa:210,noonu:300,shaviyani:145,raa:88,baa:40,kaafu:22}; for(const k in seed) for(let i=0;i<seed[k];i++) data.handshapes.push({label:k,feat:new Array(63).fill(0)});
+  history=[{label:'haa',n:30,t:Date.now()-9000},{label:'noonu',n:30,t:Date.now()-64000},{label:'raa',n:30,t:Date.now()-320000}]; }
+function persist(){ try{ localStorage.setItem('ishaara-data',JSON.stringify({handshapes:data.handshapes,history})); }catch(e){} }
+function counts(){ const c={}; data.handshapes.forEach(h=>c[h.label]=(c[h.label]||0)+1); return c; }
+
+// ---------- recognition ----------
+const K=5,MAXDIST=2.0;
+function recognize(feat){ const set=data.handshapes,n=set.length; if(!n) return null;
+  const a=new Array(n); for(let i=0;i<n;i++){ const g=set[i].feat; let s=0; for(let j=0;j<63;j++){const d=feat[j]-g[j]; s+=d*d;} a[i]={d:Math.sqrt(s),l:set[i].label}; }
+  a.sort((x,y)=>x.d-y.d); if(a[0].d>MAXDIST) return {label:null,conf:0};
+  const kk=Math.min(K,n),v={}; for(let i=0;i<kk;i++) v[a[i].l]=(v[a[i].l]||0)+1;
+  let best=null,bc=0; for(const l in v) if(v[l]>bc){bc=v[l];best=l;}
+  let din=Infinity,dout=Infinity; for(let i=0;i<n;i++){ if(a[i].l===best){ if(a[i].d<din)din=a[i].d; } else if(a[i].d<dout) dout=a[i].d; }
+  return {label:best, conf: isFinite(dout)?dout/(din+dout):1}; }
+function feats(lm){ const v=lm.map(p=>[p.x-lm[0].x,-(p.y-lm[0].y),-(p.z-lm[0].z)]); const r=Math.hypot(v[9][0],v[9][1],v[9][2])||1e-3; const f=[]; v.forEach(p=>f.push(p[0]/r,p[1]/r,p[2]/r)); return f; }
+function dirPoint(lm){ const hx=swapLR.checked?(1-lm[0].x):lm[0].x, hy=1-lm[0].y; const sz=Math.hypot(lm[9].x-lm[0].x,lm[9].y-lm[0].y)||1e-3; return [hx/sz,hy/sz]; }
+
+// ---------- ML pipeline viz ----------
+function setPipe(active, text){ for(let i=0;i<4;i++) $('pn'+i).classList.toggle('on', i<active); if(text!==undefined) pstat.innerHTML=text; }
+
+// ---------- letter grids (recognise dashboard + collect capture selector) ----------
+let curLetter='haa', litName=null; const dashChips={};
+function fillGrid(container,{selectable=false,store=false,totalEl=null,barEl=null,goalEl=null}={}){
+  container.innerHTML=''; if(store) for(const k in dashChips) delete dashChips[k];
+  const c=counts(); let total=0,done=0;
+  LETTERS.forEach(([ch,n])=>{ const v=c[n]||0; total+=v; if(v>=TARGET)done++;
+    const d=document.createElement('div'); d.className='cchip'+(selectable&&n===curLetter?' sel':'')+(v>=TARGET?' done':'');
+    d.innerHTML=`<div class="ch">${ch}</div><div class="n">${v}</div><div class="bar" style="width:${Math.min(100,v/TARGET*100)}%"></div>`;
+    if(selectable) d.onclick=()=>{ curLetter=n; $('capLetter').textContent=n; refreshGrids(); };
+    container.appendChild(d); if(store) dashChips[n]=d; });
+  if(totalEl) totalEl.textContent=`· ${done}/24 at goal`;
+  if(barEl) barEl.style.width=Math.min(100,total/GOAL*100)+'%';
+  if(goalEl) goalEl.textContent=`${total.toLocaleString()} / ${GOAL.toLocaleString()}`;
+}
+function refreshGrids(){
+  if($('dashGrid')) fillGrid($('dashGrid'),{store:true,totalEl:$('dashTotal'),barEl:$('overallBar'),goalEl:$('goalTxt')});
+  if($('capGrid')) fillGrid($('capGrid'),{selectable:true,totalEl:$('capTotal'),barEl:$('capBar'),goalEl:$('goalTxt2')});
+  if(litName&&dashChips[litName]) dashChips[litName].classList.add('lit');
+}
+function lightUp(name){ if(name===litName) return; if(litName&&dashChips[litName]) dashChips[litName].classList.remove('lit'); litName=name; if(name&&dashChips[name]) dashChips[name].classList.add('lit'); }
+
+// ---------- history ----------
+function timeAgo(t){ const s=(Date.now()-t)/1000; if(s<60)return Math.floor(s)+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; return Math.floor(s/3600)+'h ago'; }
+function renderHistory(){ const h=$('history'); if(!history.length){ h.innerHTML='<div class="empty">No samples captured yet.</div>'; return; }
+  h.innerHTML=history.slice(0,7).map(e=>`<div class="hrow"><div class="hg">${NAME2CH[e.label]||''}</div><div class="hn">${e.label}</div><div class="hc">+${e.n}</div><div class="ht">${timeAgo(e.t)}</div></div>`).join(''); }
+setInterval(renderHistory,12000);
+
+// ---------- toggles + tabs ----------
+outputOn.onchange=()=>document.body.classList.toggle('show-output',outputOn.checked);
+$('cogBtn').onclick=()=>$('setPop').classList.add('open');
+$('setClose').onclick=()=>$('setPop').classList.remove('open');
+$('setPop').onclick=e=>{ if(e.target===$('setPop')) $('setPop').classList.remove('open'); };
+function setTab(t){ document.body.classList.toggle('tab-recog',t==='recog'); document.body.classList.toggle('tab-collect',t==='collect'); $('tabRecog').classList.toggle('on',t==='recog'); $('tabCollect').classList.toggle('on',t==='collect'); if(t!=='recog') lightUp(null); refreshGrids(); }
+$('tabRecog').onclick=()=>setTab('recog'); $('tabCollect').onclick=()=>setTab('collect');
+
+// ---------- collect ----------
+let latest=null,shapeCap=null;
+$('cap').onclick=()=>{ if(!latest){ setStatus('No hand visible.',true); return; } shapeCap={label:curLetter,left:30,got:0}; };
+function collectFrame(lm){ if(!shapeCap)return; data.handshapes.push({label:shapeCap.label,feat:feats(lm)}); shapeCap.got++;
+  setPipe(4,`receiving frame <b>${shapeCap.got}/30</b> · 21 landmarks ✓ · extracting 63 features · classifying (k-NN)…`);
+  if(--shapeCap.left<=0){ const lab=shapeCap.label; shapeCap=null; history.unshift({label:lab,n:30,t:Date.now()}); persist(); refreshGrids(); renderHistory();
+    setPipe(4,`received 30 frames → features extracted → saved <b>${lab}</b> ×30 → dataset updated ✓`); setStatus('Saved 30 for “'+lab+'”.'); } }
+$('exportBtn').onclick=(e)=>{ e.stopPropagation&&e.stopPropagation(); const b=new Blob([JSON.stringify({handshapes:data.handshapes})],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ishaara-dataset.json'; a.click(); };
+
+// ---------- recognizer state machine ----------
+const P={lockConf:0.7,stableN:5,lockStillVel:0.09,neutralR:0.35,dirR:0.70,zoneDwellMs:350,sukunDwellMs:1300,bareDwellMs:450,cooldownMs:550};
+let phase='idle',lastLabel=null,stableCount=0,locked=null,prevPos=null,vel=0,cooldownUntil=0,anchor=null,zone=null,zoneSince=0,anchorPx=null,anchorHandPx=1,curW=0,curH=0,word='';
+function render(){ outEl.textContent=word; }
+$('space').onclick=()=>{word+=' ';render();}; $('back').onclick=()=>{word=[...word].slice(0,-1).join('');render();}; $('clear').onclick=()=>{word='';render();};
+function setPhase(p){ phase=p; chip.textContent=p; chip.className='chip'+(p==='locked'?' ok':''); }
+function nameFor(ch){ const f=FILI.find(x=>x[1]===ch); return f?f[0]:'none'; }
+function resetRec(){ phase='idle';locked=null;anchor=null;anchorPx=null;zone=null;stableCount=0;lastLabel=null;conf.style.width='0'; }
+function zoneOf(dx,dy){ const m=Math.hypot(dx,dy); if(m<P.neutralR)return'none'; if(m<P.dirR)return'arming'; return Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'up':'down'); }
+function commit(dir){ const c=NAME2CH[locked]||'?'; const fili=(filiOn.checked&&dir!=='bare')?(dirFili[dir]??''):''; word+=c+fili; render(); hint.textContent=`added ${locked}${dir==='bare'?'':' + '+(dir==='none'?'sukun':dir)}`; resetRec(); setPhase('cooldown'); cooldownUntil=performance.now()+P.cooldownMs; }
+function updateNow(pr){
+  if(pr===null){ glyph.textContent='—'; nowlabel.textContent='no data yet'; nowsub.innerHTML='&nbsp;'; conf.style.width='0'; lightUp(null); return; }
+  if(!pr.label){ glyph.textContent='?'; nowlabel.textContent='unknown shape'; nowsub.innerHTML='&nbsp;'; conf.style.width='0'; lightUp(null); return; }
+  glyph.textContent=NAME2CH[pr.label]||'—'; nowlabel.textContent=pr.label; nowsub.textContent='confidence '+(pr.conf*100).toFixed(0)+'%'; conf.style.width=(pr.conf*100)+'%'; lightUp(pr.label);
+}
+function step(lm,now){
+  const pos=dirPoint(lm); if(prevPos){ const d=Math.hypot(pos[0]-prevPos[0],pos[1]-prevPos[1]); vel=vel*0.5+d*0.5; } prevPos=pos;
+  const pr=recognize(feats(lm)); updateNow(pr);
+  if(!shapeCap){ if(pr&&pr.label) setPipe(4,`frame ✓ · 21 landmarks ✓ · 63 features ✓ · classified <b>${pr.label}</b> (${(pr.conf*100)|0}%)`);
+    else if(data.handshapes.length) setPipe(3,'frame ✓ · 21 landmarks ✓ · 63 features ✓ · classifying (k-NN)…');
+    else setPipe(2,'frame ✓ · 21 landmarks ✓ · model has no samples yet'); }
+  if(phase==='cooldown'){ dirlb.textContent='…'; ar.textContent='·'; if(now>cooldownUntil) setPhase('idle'); return; }
+  if(!pr||!pr.label){ hint.textContent = data.handshapes.length?'hold a learned handshape':'no samples yet — collect some'; return; }
+  if(pr.label===lastLabel) stableCount++; else{ stableCount=0; lastLabel=pr.label; }
+  if(phase==='idle'){ dirlb.textContent='shape'; ar.textContent='·'; hint.textContent='hold the handshape steady…';
+    if(pr.conf>=P.lockConf&&stableCount>=P.stableN&&vel<P.lockStillVel){ locked=pr.label; anchor=pos.slice(); zone=null; setPhase('locked'); anchorPx=[mapX(lm[0]),mapY(lm[0])]; anchorHandPx=Math.hypot(mapX(lm[9])-mapX(lm[0]),mapY(lm[9])-mapY(lm[0]))||1; } }
+  else if(phase==='locked'){
+    if(!filiOn.checked){ ar.textContent='·'; dirlb.textContent='hold';
+      if(vel<P.lockStillVel){ if(zone!=='bare'){zone='bare';zoneSince=now;} const h=now-zoneSince; conf.style.width=Math.min(100,h/P.bareDwellMs*100)+'%'; hint.textContent=`hold to add ${locked}`; if(h>=P.bareDwellMs) commit('bare'); } else zone=null; return; }
+    const dx=pos[0]-anchor[0], dy=pos[1]-anchor[1], z=zoneOf(dx,dy);
+    ar.textContent=(z==='none'||z==='arming')?'·':AR[z]; dirlb.textContent=z==='arming'?'move':z;
+    if(z==='none'){ if(zone!=='none'||vel>=P.lockStillVel){zone='none';zoneSince=now;} const h=now-zoneSince; conf.style.width=Math.min(100,h/P.sukunDwellMs*100)+'%'; hint.textContent=`move a direction, or hold for sukun`; if(h>=P.sukunDwellMs) commit('none'); }
+    else if(z==='arming'){ zone='arming'; conf.style.width='0'; hint.textContent='keep moving outward'; }
+    else { if(zone!==z){zone=z;zoneSince=now;} const h=now-zoneSince; conf.style.width=Math.min(100,h/P.zoneDwellMs*100)+'%'; hint.textContent=`${z} — hold (${locked} + ${nameFor(dirFili[z])})`; if(h>=P.zoneDwellMs) commit(z); }
+  }
+}
+
+// ---------- drawing ----------
+const EDGES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+let mapX=p=>0, mapY=p=>0;  // cover-aware landmark→canvas mapping (keeps overlay aligned when cropped)
+function draw(lm){ const w=cv.width=cv.clientWidth,h=cv.height=cv.clientHeight; curW=w;curH=h; ctx.clearRect(0,0,w,h);
+  const vw=video.videoWidth||16,vh=video.videoHeight||9,s=Math.max(w/vw,h/vh),dw=vw*s,dh=vh*s,ox=(w-dw)/2,oy=(h-dh)/2;
+  mapX=p=>ox+(1-p.x)*dw; mapY=p=>oy+p.y*dh;
+  if(!lm)return; const X=mapX,Y=mapY;
+  ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=3; EDGES.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(X(lm[a]),Y(lm[a]));ctx.lineTo(X(lm[b]),Y(lm[b]));ctx.stroke();});
+  ctx.fillStyle='#fff'; lm.forEach(p=>{ctx.beginPath();ctx.arc(X(p),Y(p),3.4,0,7);ctx.fill();}); }
+function drawGuide(lm){ if(phase!=='locked'||!anchorPx||!filiOn.checked)return; const wx=mapX(lm[0]),wy=mapY(lm[0]);
+  ctx.setLineDash([6,6]); ctx.lineWidth=2; ctx.strokeStyle='rgba(160,160,168,.6)'; ctx.beginPath();ctx.arc(anchorPx[0],anchorPx[1],P.neutralR*anchorHandPx,0,7);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.beginPath();ctx.arc(anchorPx[0],anchorPx[1],P.dirR*anchorHandPx,0,7);ctx.stroke();
+  ctx.setLineDash([]); ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.beginPath();ctx.moveTo(anchorPx[0],anchorPx[1]);ctx.lineTo(wx,wy);ctx.stroke(); }
+
+// ---------- publish (studio) ----------
+if(STUDIO){
+  const gf={owner:$('ghOwner'),repo:$('ghRepo'),branch:$('ghBranch'),token:$('ghToken')};
+  const KEY={owner:'gh_owner',repo:'gh_repo',branch:'gh_branch',token:'gh_token'};
+  Object.keys(gf).forEach(k=>{ try{ gf[k].value=localStorage.getItem(KEY[k])||''; }catch(e){} });
+  const pst=$('pubStatus'); function pset(t,c){ pst.textContent=t; pst.className='status'+(c?' '+c:''); pst.style.textAlign='left'; }
+  const b64=s=>btoa(unescape(encodeURIComponent(s)));
+  $('publishBtn').onclick=async()=>{ const owner=gf.owner.value.trim(),repo=gf.repo.value.trim(),branch=gf.branch.value.trim()||'main',token=gf.token.value.trim();
+    if(!owner||!repo||!token){ pset('Enter username, repo, and token.','err'); return; }
+    Object.keys(gf).forEach(k=>{ try{ localStorage.setItem(KEY[k],gf[k].value.trim()); }catch(e){} });
+    const api=`https://api.github.com/repos/${owner}/${repo}/contents/dataset.json`, headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json'};
+    pset('Publishing…');
+    try{ let sha; const g=await fetch(api+'?ref='+encodeURIComponent(branch),{headers}); if(g.ok) sha=(await g.json()).sha;
+      const body={message:'Update dataset ('+data.handshapes.length+' samples)',content:b64(JSON.stringify({handshapes:data.handshapes})),branch}; if(sha) body.sha=sha;
+      const p=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+      if(p.ok) pset('Published ✓ — live in ~1 min ('+data.handshapes.length+' samples).','ok');
+      else { const e=await p.json().catch(()=>({})); pset('Failed: '+(e.message||p.status),'err'); }
+    }catch(err){ pset('Network error: '+err.message,'err'); } };
+}
+
+// ---------- background streams ----------
+(function(){ const bg=$('bg'); if(!bg) return; const chars=LETTERS.map(l=>l[0]);
+  const field=document.createElement('div'); field.className='field'; bg.appendChild(field);
+  const cover=(innerWidth+innerHeight)/1.414;
+  const STREAMS=Math.min(MOBILE?26:54, Math.ceil(cover/50)+3);
+  const lh=36, PER=Math.min(MOBILE?64:96, Math.ceil(2.0*Math.max(innerWidth,innerHeight)/lh)+5);
+  for(let i=0;i<STREAMS;i++){ const st=document.createElement('div'); st.className='stream'; const col=document.createElement('div'); col.className='col';
+    col.style.animationDuration=(22+Math.random()*20).toFixed(1)+'s'; col.style.animationDelay=(-Math.random()*30).toFixed(1)+'s';
+    let s=''; for(let j=0;j<PER;j++) s+='<span>'+chars[(Math.random()*chars.length)|0]+'</span>'; col.innerHTML=s+s; st.appendChild(col); field.appendChild(st); } })();
+
+// ---------- MediaPipe + camera ----------
+let hands,running=false,sending=false;
+function onResults(res){ const has=res.multiHandLandmarks&&res.multiHandLandmarks.length; const lm=has?res.multiHandLandmarks[0]:null; latest=lm; draw(lm);
+  $('cap').disabled=!has;
+  if(!lm){ glyph.textContent='—'; nowlabel.textContent='show your hand'; conf.style.width='0'; prevPos=null; ar.textContent='·'; dirlb.textContent='—'; lightUp(null); if(!shapeCap) setPipe(1,'camera on · waiting for a hand in the frame…'); if(phase==='locked'){resetRec(); hint.textContent='lock cancelled';} return; }
+  if(shapeCap) collectFrame(lm);
+  step(lm,performance.now()); drawGuide(lm);
+}
+async function pump(){ if(running&&!sending&&video.readyState>=2){ sending=true; try{ await hands.send({image:video}); }catch(e){} sending=false; } requestAnimationFrame(pump); }
+function loadScript(urls){return new Promise((res,rej)=>{let i=0;const t=()=>{if(i>=urls.length)return rej(new Error('load fail'));const s=document.createElement('script');s.src=urls[i++];s.onload=()=>res();s.onerror=t;document.head.appendChild(s);};t();});}
+async function boot(){
+  refreshGrids(); renderHistory(); $('capLetter').textContent=curLetter; setPipe(1,'starting…');
+  if(PREVIEW){ $('previewNote').style.display='flex'; overlay.style.display='none'; setStatus('Preview mode'); setPipe(3,'preview — pipeline idle'); return; }
+  try{ setStatus('Loading hand tracker…');
+    await loadScript(['https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js','https://unpkg.com/@mediapipe/hands/hands.js']);
+    hands=new window.Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    hands.setOptions({maxNumHands:1,modelComplexity:MOBILE?0:1,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+    hands.onResults(onResults);
+    try{ const r=await fetch('dataset.json',{cache:'no-store'}); if(r.ok){ const o=await r.json(); if(o&&o.handshapes&&o.handshapes.length){ PUB=o.handshapes; if(!data.handshapes.length){ data.handshapes=o.handshapes.map(h=>({label:h.label,feat:h.feat})); refreshGrids(); } } } }catch(e){}
+    setStatus('Ready — allow camera'); startBtn.disabled=false;
+  }catch(e){ $('ovtext').innerHTML='Could not load libraries — check your connection and reload.'; setStatus('Load failed',true); }
+}
+startBtn.onclick=async()=>{ try{ setStatus('Starting camera…');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream; await video.play(); running=true; pump(); overlay.style.display='none'; setStatus('Camera on'); setPhase('idle'); render();
+}catch(e){ $('ovtext').innerHTML='Camera failed: '+e.message+'. Allow camera access and reload.'; setStatus('Camera error',true); } };
+boot();
+</script>
+</body>
+</html>
