@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ishaara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Noto+Sans+Thaana:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060e1a; --line:#1c2a3c; --text:#e6edf6; --muted:#77879e; --accent:#6bf61d; --r:16px;
+    --ink:#0c1a2c;
+    --orange:#ff8a1e; --pink:#ff2d84; --lime:#6bf61d; --yellow:#ffe000;
+    --thaana:"Noto Sans Thaana",sans-serif; --wordmark:"Syne",-apple-system,sans-serif;
+    --glass:rgba(16,28,44,.55);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{background:radial-gradient(1100px 700px at 15% -10%, rgba(255,138,30,.05), transparent 55%), radial-gradient(1100px 700px at 85% -10%, rgba(255,45,132,.06), transparent 55%), radial-gradient(1200px 900px at 50% 120%, rgba(107,246,29,.035), transparent 60%), var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; min-height:100vh; padding:16px 14px 30px; font-size:15px; line-height:1.4}
+  .wrap{max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:11px; animation:fadeup .45s ease both}
+  @keyframes fadeup{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+  .app{display:grid; gap:16px 11px}
+  .a-cam{grid-area:cam}.a-set{grid-area:set}.a-cap{grid-area:cap}.a-rec{grid-area:rec}.a-pipe{grid-area:pipe}.a-help{grid-area:help}.a-dash{grid-area:dash}.a-hist{grid-area:hist}.a-full{grid-column:1/-1}
+  @media(min-width:760px){
+    .app{align-items:stretch}
+    body.tab-recog .app{grid-template-columns:1fr 1fr; grid-template-areas:"cam cam" "rec pipe" "out out" "help help" "dash dash"}
+    body.tab-recog .outputCard{grid-area:out}
+    body.tab-collect .app{grid-template-columns:1.55fr 1fr; grid-template-areas:"cam cap" "pipe pipe" "hist hist"}
+    body.tab-collect .a-cam{align-self:start}
+  }
+  @media(max-width:759px){ .app{grid-template-columns:1fr !important; grid-template-areas:none !important} .app>*{grid-column:auto !important; grid-area:auto !important} }
+  .top{display:flex; align-items:center; gap:10px}
+  .brand-logo{display:flex; align-items:baseline; gap:9px}
+  .brand-logo .logoimg{height:30px; width:auto; display:block; filter:drop-shadow(0 0 10px rgba(107,246,29,.3))}
+  .brand-logo .en,.brand-logo .dv{display:none}
+  .brand-logo.nofile .en{display:inline-block; font-family:var(--wordmark); font-weight:800; letter-spacing:.1em; font-size:18px; font-style:italic; background:linear-gradient(100deg,var(--yellow) 40%,var(--lime)); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 8px rgba(107,246,29,.35))}
+  .brand-logo.nofile .dv{display:inline; font-family:var(--thaana); font-size:20px; color:var(--muted); line-height:1}
+  .badge{margin-left:auto; font-size:10.5px; color:var(--muted); border:1px solid var(--line); padding:5px 11px; border-radius:999px; text-transform:uppercase; letter-spacing:.5px}
+  .tabs{display:flex; background:rgba(28,28,34,.5); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:3px; gap:3px}
+  .tabs button{flex:1; border:none; background:transparent; color:var(--muted); padding:11px; border-radius:9px; font-weight:700; font-size:14px; cursor:pointer; transition:.15s}
+  .tabs button.on{background:var(--accent); color:var(--ink)}
+  .card{background:var(--glass); backdrop-filter:blur(16px) saturate(1.2); -webkit-backdrop-filter:blur(16px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09); border-radius:var(--r); padding:14px 15px;
+    box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 12px 34px -14px rgba(0,0,0,.55); transition:border-color .15s;
+    display:flex; flex-direction:column; justify-content:center}
+  .card h2{margin:0 0 10px; font-size:11px; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); font-weight:700; display:flex; justify-content:space-between; align-items:center; gap:8px}
+  .camcard{padding:0; overflow:hidden; background:rgba(8,8,10,.6); justify-content:flex-start}
+  @media(min-width:760px){ body.tab-recog .a-cam .stage{max-height:48vh} }
+  @media(max-width:759px){ .stage{aspect-ratio:4/3} body.tab-recog .stage{aspect-ratio:3/4} }
+  #capGrid .cchip .ch{font-size:19px} #capGrid .cchip .n{font-size:10px}
+  /* recognise: fit closer to one screen */
+  body.tab-recog .app{gap:12px 11px}
+  #dashGrid .cchip{height:44px}
+  @media(min-width:760px){ body.tab-recog #dashGrid{grid-template-columns:repeat(8,1fr)} }
+  .stage{position:relative; width:100%; aspect-ratio:16/9; background:#050506; overflow:hidden}
+  .stage video,.stage canvas{position:absolute; inset:0; width:100%; height:100%}
+  .stage video{transform:scaleX(-1); object-fit:cover}
+  body.fit-contain .stage video{object-fit:contain}
+  .chip{position:absolute; top:10px; left:10px; font-size:11.5px; padding:5px 11px; border-radius:999px; background:rgba(0,0,0,.5); border:1px solid var(--line); color:var(--muted); backdrop-filter:blur(6px); text-transform:capitalize}
+  .chip.ok{color:#fff; border-color:rgba(255,255,255,.45)}
+  .flip{position:absolute; top:10px; right:10px; width:44px; height:44px; padding:0; min-width:0; border-radius:12px; background:rgba(0,0,0,.62); border:1px solid rgba(255,255,255,.35); color:#fff; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); z-index:3}
+  .flip svg{width:22px; height:22px}
+  @media(min-width:760px){ .flip{display:none} }
+  #stageEl{cursor:pointer}
+  .camhint{position:absolute; left:50%; bottom:10px; transform:translateX(-50%); font-size:11.5px; color:#fff; background:rgba(0,0,0,.58); border:1px solid rgba(255,255,255,.25); padding:5px 13px; border-radius:999px; backdrop-filter:blur(6px); z-index:3; pointer-events:none; white-space:nowrap}
+  @media(min-width:760px){ .camhint{display:none} }
+  .filiCue{position:absolute; top:10px; right:10px; z-index:6; display:none; align-items:center; gap:8px; background:rgba(107,246,29,.16); border:1px solid var(--accent); color:#eafff0; padding:7px 12px; border-radius:999px; font-size:12.5px; font-weight:600; backdrop-filter:blur(6px); box-shadow:0 4px 16px -6px rgba(0,0,0,.6); pointer-events:none; white-space:nowrap}
+  .filiCue.on{display:flex; animation:cuePop .22s ease both, cuePulse 1.7s ease-in-out .22s infinite}
+  .filiCue .fc-ar{color:var(--accent); font-size:12px; letter-spacing:1px}
+  @keyframes cuePop{from{opacity:0; transform:translateY(-6px) scale(.92)} to{opacity:1; transform:none}}
+  @keyframes cuePulse{0%,100%{box-shadow:0 4px 16px -6px rgba(0,0,0,.6)} 50%{box-shadow:0 0 16px 1px rgba(107,246,29,.4)}}
+  @media(max-width:759px){ body.tab-recog .filiCue{top:62px} }
+  .filiPad{position:absolute; right:10px; bottom:10px; z-index:6; display:none; width:80px; height:80px; padding:6px; background:rgba(9,15,25,.74); border:1px solid rgba(255,255,255,.18); border-radius:12px; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); place-items:stretch; backdrop-filter:blur(4px); pointer-events:none}
+  .filiPad.on{display:grid}
+  .filiPad .fp{display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.55); font-size:15px; line-height:1; border-radius:6px; transition:color .1s}
+  .filiPad .up{grid-column:2; grid-row:1} .filiPad .left{grid-column:1; grid-row:2} .filiPad .mid{grid-column:2; grid-row:2; font-size:8px; color:rgba(255,255,255,.4)} .filiPad .right{grid-column:3; grid-row:2} .filiPad .down{grid-column:2; grid-row:3}
+  .filiPad .fp.act{color:var(--ink); font-weight:800; background:linear-gradient(to top, var(--accent) calc(var(--p,0)*100%), rgba(107,246,29,.22) 0)}
+  @media(max-width:759px){ #capGrid .cchip{height:44px} }
+  body.tab-collect .camhint{display:none}
+  .selbar{display:none; align-items:center; gap:11px; justify-content:center; background:var(--glass); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.09); border-radius:var(--r); padding:9px 14px}
+  .selbar .lbl{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px}
+  .selbar .g{font-family:var(--thaana); font-size:30px; color:#fff; line-height:1}
+  .selbar .nm{font-size:15px; font-weight:600}
+  @media(max-width:759px){ body.tab-collect .selbar{display:flex} body.tab-collect .stage{aspect-ratio:1/1} }
+  .shutter{position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:60px; height:60px; border-radius:50%; background:#fff; border:none; box-shadow:0 0 0 4px rgba(255,255,255,.35), 0 0 0 6px rgba(0,0,0,.45); z-index:4; padding:0; min-width:0; display:none; cursor:pointer}
+  @media(max-width:759px){ body.tab-collect .shutter{display:block} }
+  .shutter:active{transform:translateX(-50%) scale(.9)}
+  .shutter:disabled{background:#8a8a92; box-shadow:0 0 0 4px rgba(255,255,255,.15)}
+  .previewNote{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; text-align:center; padding:20px}
+  .sw{display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px; padding:7px 2px}
+  .sw span{color:var(--muted)}
+  .sw + .sw{border-top:1px solid var(--line)}
+  .tg{position:relative; width:46px; height:27px; flex:none}
+  .tg input{opacity:0; width:100%; height:100%; margin:0}
+  .tg .sl{position:absolute; inset:0; background:rgba(255,255,255,.08); border:1px solid var(--line); border-radius:999px; transition:.15s; pointer-events:none}
+  .tg .sl::after{content:""; position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%; background:#8894a5; transition:.15s}
+  .tg input:checked + .sl{background:rgba(255,255,255,.22); border-color:var(--accent)}
+  .tg input:checked + .sl::after{transform:translateX(19px); background:#fff}
+  /* ML pipeline */
+  .pipe .prow{display:flex; align-items:center; gap:6px}
+  .node{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap; opacity:.5; transition:.2s}
+  .node.on{opacity:1; color:#fff}
+  .node .dot{width:9px; height:9px; border-radius:50%; background:#3a3a42; transition:.2s}
+  .node.on .dot{background:var(--accent); box-shadow:0 0 10px rgba(107,246,29,.7); animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1); opacity:1} 50%{transform:scale(1.35); opacity:.7}}
+  .pline{flex:1; height:2px; background:linear-gradient(90deg,#2c2c32,#3a3a42); border-radius:2px}
+  .pstat{font-size:12.5px; color:var(--muted); margin-top:10px; min-height:16px}
+  .pstat b{color:#fff}
+  /* recognised */
+  .now{display:flex; align-items:center; gap:14px}
+  .glyph{font-family:var(--thaana); font-size:56px; font-weight:600; line-height:1; min-width:66px; text-align:center; color:var(--accent); text-shadow:0 0 22px rgba(107,246,29,.5)}
+  .nowinfo{flex:1; min-width:0}
+  .nowlabel{font-size:15px; font-weight:600}
+  .nowsub{font-size:12px; color:var(--muted); margin-top:2px}
+  .conf{height:8px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden; margin-top:9px}
+  .conf i{display:block; height:100%; width:0; background:var(--accent); transition:width .09s linear}
+  .dir{text-align:center; width:52px; flex:none}
+  .dir .ar{font-size:26px; color:var(--accent); height:28px; line-height:1}
+  .dir .lb{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px}
+  .hint{font-size:12.5px; color:var(--muted); text-align:center; margin-top:11px; min-height:16px}
+  .output{font-family:var(--thaana); direction:rtl; text-align:right; font-size:34px; min-height:48px; line-height:1.4; word-break:break-word; padding:2px}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  button{cursor:pointer; border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--text); font-size:14px; font-weight:600; padding:12px 14px; border-radius:12px; flex:1; min-width:70px; transition:.12s}
+  button:hover{border-color:#44444c} button:active{background:rgba(255,255,255,.1)}
+  button.primary{background:var(--accent); color:var(--ink); border-color:var(--accent); flex:none; padding:13px 26px}
+  button:disabled{opacity:.45; cursor:default}
+  .helpTitle{text-align:center; padding:2px 0 4px}
+  .helpTitle .t{font-family:var(--wordmark); font-size:19px; font-weight:700; color:#fff}
+  .helpTitle .s{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .grid{display:grid; grid-template-columns:repeat(6,1fr); gap:7px}
+  @media(max-width:430px){ .grid{grid-template-columns:repeat(5,1fr)} }
+  .cchip{position:relative; height:52px; border:1px solid var(--line); border-radius:11px; background:rgba(255,255,255,.03); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; transition:background .12s,border-color .12s,box-shadow .12s}
+  .cchip .n{margin-top:1px}
+  .cchip .ch{font-family:var(--thaana); font-size:22px; line-height:1} .cchip .n{font-size:10.5px; color:var(--muted); margin-top:3px}
+  .cchip.spec{border-color:var(--pink)} .cchip.spec .ch{font-family:inherit; font-size:18px; color:var(--pink)}
+  .cchip .bar{position:absolute; bottom:0; left:0; height:3px; background:var(--accent); width:0}
+  .cchip.done .bar{height:4px}
+  body.tab-collect .cchip.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+  .cchip.lit{background:var(--accent); border-color:var(--accent); box-shadow:0 0 18px rgba(107,246,29,.5)}
+  .cchip.lit .ch,.cchip.lit .n{color:var(--ink)}
+  .prog{margin-top:12px}
+  .prog .lab{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:6px}
+  .obar{height:9px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden}
+  .obar i{display:block; height:100%; width:0; background:var(--accent); transition:width .3s}
+  /* history */
+  .hrow{display:flex; align-items:center; gap:10px; padding:8px 2px; font-size:14px}
+  .hrow + .hrow{border-top:1px solid var(--line)}
+  .hrow .hg{font-family:var(--thaana); font-size:22px; width:30px; text-align:center}
+  .hrow .hn{flex:1; color:var(--muted); font-size:13px}
+  .hrow .ht{color:var(--muted); font-size:12px}
+  .hrow .hc{font-weight:700}
+  .empty{color:var(--muted); font-size:13px; padding:6px 2px}
+  .footer{text-align:center; margin-top:6px; padding-top:6px}
+  .footer .love{font-size:13px; color:var(--text)} .footer .love b{font-weight:700}
+  .footer .credit{font-size:11.5px; color:#6c6c78; margin-top:4px}
+  .only-recog,.only-collect{display:none}
+  body.tab-recog .only-recog{display:block} body.tab-collect .only-collect{display:block}
+  body:not(.studio) .studio-only{display:none}
+  body:not(.show-output) .outputCard{display:none}
+  .status{font-size:12px; color:var(--muted); text-align:center}
+  .status.err{color:#ff9aa2} .status.ok{color:#fff}
+  .cog{flex:none; width:38px; height:38px; padding:0; min-width:0; border-radius:11px; display:flex; align-items:center; justify-content:center; color:var(--text)}
+  .cog svg{width:18px; height:18px}
+  .modal{position:fixed; inset:0; z-index:35; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.55); backdrop-filter:blur(4px)}
+  .modal.open{display:flex}
+  .modal .sheet{width:100%; max-width:400px; max-height:86vh; overflow:auto; background:rgba(18,18,22,.94); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px 18px; box-shadow:0 24px 60px -20px #000}
+  .modalh{display:flex; justify-content:space-between; align-items:center; font-size:12px; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); font-weight:700; margin:0 0 6px}
+  .modalh .x{flex:none; width:30px; height:30px; padding:0; min-width:0; border-radius:8px; font-size:13px}
+  /* background streams */
+  #bg{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none}
+  #bg .field{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-45deg); display:flex; gap:28px}
+  #bg .stream{width:22px; height:210vmax; overflow:hidden}
+  #bg .col{display:flex; flex-direction:column; align-items:center; animation:flow linear infinite; will-change:transform}
+  #bg .col span{font-family:var(--thaana); font-size:22px; line-height:1.6; opacity:.1; will-change:transform,opacity,text-shadow}
+  #bg .col span.p{color:#9a5470; text-shadow:none}
+  #bg .col span.o{color:#a8764a; text-shadow:none}
+  #bg .col span.p.gl{animation:glitchP 3.2s steps(2,end) infinite}
+  #bg .col span.o.gl{animation:glitchO 3.2s steps(2,end) infinite}
+  @keyframes glitchP{
+    0%,100%{transform:translateX(0); opacity:.1; color:#9a5470; text-shadow:none}
+    16%{transform:translateX(-1px); opacity:.55; color:#ff2d84; text-shadow:0 0 5px rgba(255,45,132,.45),0 0 10px rgba(255,45,132,.3)}
+    19%{transform:translateX(1px)}
+    34%{transform:translateX(0); opacity:.1; color:#9a5470; text-shadow:none}
+    64%{opacity:.5; color:#ff2d84; text-shadow:0 0 5px rgba(255,45,132,.4); transform:translateX(1px)}
+    68%{transform:translateX(-1px); opacity:.1; color:#9a5470; text-shadow:none}
+  }
+  @keyframes glitchO{
+    0%,100%{transform:translateX(0); opacity:.1; color:#a8764a; text-shadow:none}
+    16%{transform:translateX(-1px); opacity:.55; color:#ff8a1e; text-shadow:0 0 5px rgba(255,138,30,.42),0 0 10px rgba(255,138,30,.28)}
+    19%{transform:translateX(1px)}
+    34%{transform:translateX(0); opacity:.1; color:#a8764a; text-shadow:none}
+    64%{opacity:.5; color:#ff8a1e; text-shadow:0 0 5px rgba(255,138,30,.38); transform:translateX(1px)}
+    68%{transform:translateX(-1px); opacity:.1; color:#a8764a; text-shadow:none}
+  }
+  @media(prefers-reduced-motion:reduce){ #bg .col span.gl{animation:none} }
+  @keyframes flow{from{transform:translateY(-50%)} to{transform:translateY(0)}}
+  #overlay{position:fixed; inset:0; z-index:40; display:flex; flex-direction:column; gap:16px; align-items:center; justify-content:center; text-align:center; padding:26px; background:rgba(6,6,8,.86); backdrop-filter:blur(14px)}
+  #overlay p{color:var(--muted); max-width:420px; font-size:14px; line-height:1.6}
+  .logo{text-align:center; line-height:1}
+  .logo .logoimg-big{width:min(90vw,680px); height:auto; display:block; margin:0 auto; filter:drop-shadow(0 0 26px rgba(107,246,29,.4))}
+  .upnote{display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--text); background:rgba(107,246,29,.08); border:1px solid rgba(107,246,29,.35); border-radius:12px; padding:9px 13px; animation:fadeup .35s ease both}
+  .upnote .ic{color:var(--accent); font-weight:800}
+  .upnote b{color:var(--accent); font-weight:700}
+  .upnote .tm{color:var(--muted); margin-left:auto; font-size:11.5px; white-space:nowrap}
+  .upnote .upx{flex:none; width:24px; height:24px; min-width:0; padding:0; border-radius:7px; border:1px solid var(--line); background:transparent; color:var(--muted); font-size:12px; line-height:1; display:flex; align-items:center; justify-content:center}
+  .upnote .upx:hover{color:var(--text); border-color:var(--muted)}
+  .loglist{max-height:210px; overflow:auto; margin-top:4px; border:1px solid var(--line); border-radius:10px}
+  .logrow{display:flex; align-items:center; gap:10px; padding:8px 11px; font-size:13px}
+  .logrow + .logrow{border-top:1px solid var(--line)}
+  .logrow .lg{color:var(--accent); font-weight:600}
+  .logrow .lt{margin-left:auto; color:var(--muted); font-size:11.5px; white-space:nowrap}
+  .loglist .empty{padding:10px 11px}
+  .logo .en,.logo .dv{display:none}
+  .logo.nofile .en{display:block; font-family:var(--wordmark); font-weight:800; font-style:italic; letter-spacing:.06em; padding-left:.1em; font-size:clamp(38px,10vw,66px); background:linear-gradient(105deg,var(--yellow) 42%,var(--lime)); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 16px rgba(107,246,29,.4))}
+  .logo.nofile .dv{display:block}
+  .logo .dv{font-family:var(--thaana); direction:rtl; margin-top:16px; font-size:clamp(36px,10vw,62px); font-weight:400; color:#eceef2}
+  .logo .dv b{font-weight:400; border-bottom:2px solid rgba(255,255,255,.3); padding-bottom:6px}
+</style>
+</head>
+<body class="tab-recog">
+<div id="bg" aria-hidden="true"></div>
+<div class="wrap">
+  <div class="top">
+    <div class="brand-logo"><img src="ishaara-logo.png" alt="ISHAARA" class="logoimg" onerror="this.style.display='none';this.parentNode.classList.add('nofile')"><span class="en">ISHAARA</span><span class="dv">އިޝާރާ</span></div>
+    <div class="badge" id="modeBadge">demo</div>
+    <button id="cogBtn" class="cog" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+  <div class="tabs studio-only"><button id="tabRecog" class="on">Recognise</button><button id="tabCollect">Collect</button></div>
+  <div id="updateNote" class="upnote" style="display:none"></div>
+
+  <div class="app">
+  <!-- selected-letter banner (mobile collect) -->
+  <div class="selbar" id="selbar"><span class="lbl">Capturing</span><span class="g" id="selGlyph">ހ</span><span class="nm" id="selName">haa</span></div>
+  <!-- camera -->
+  <div class="card camcard a-cam">
+    <div class="stage" id="stageEl">
+      <video id="video" playsinline muted></video>
+      <canvas id="cv"></canvas>
+      <div class="chip" id="chip">—</div>
+      <button id="flipBtn" class="flip" title="Switch camera" aria-label="Switch camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+      <div class="camhint" id="camhint">tap to flip camera</div>
+      <div id="filiCue" class="filiCue"><span class="fc-ar">↑↓←→</span><span>move to add a vowel</span></div>
+      <div id="filiPad" class="filiPad" aria-hidden="true"><span class="fp up">▲</span><span class="fp left">◀</span><span class="fp mid">●</span><span class="fp right">▶</span><span class="fp down">▼</span></div>
+      <button id="shutter" class="shutter" title="Capture" aria-label="Capture"></button>
+      <div class="previewNote" id="previewNote" style="display:none">Preview mode — camera disabled</div>
+    </div>
+  </div>
+
+  <!-- capture (collect) — own letter grid -->
+  <div class="card only-collect a-cap">
+    <h2>Capture a letter <span id="capTotal" style="font-weight:400;text-transform:none;color:var(--muted)"></span></h2>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 11px">Tap a letter, hold the shape, then capture (30 samples per press).</p>
+    <div class="grid" id="capGrid"></div>
+    <div class="prog"><div class="lab"><span>Progress to goal</span><span id="goalTxt2"></span></div><div class="obar"><i id="capBar"></i></div></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="cap" style="flex:1" disabled>Capture “<span id="capLetter">haa</span>”</button></div>
+  </div>
+
+  <!-- recognised letter (recognise) -->
+  <div class="card only-recog a-rec">
+    <h2>Recognised letter</h2>
+    <div class="now">
+      <div class="glyph" id="glyph">—</div>
+      <div class="nowinfo"><div class="nowlabel" id="nowlabel">show your hand</div><div class="nowsub" id="nowsub">&nbsp;</div><div class="conf"><i id="conf"></i></div></div>
+      <div class="dir"><div class="ar" id="ar">·</div><div class="lb" id="dirlb">—</div></div>
+    </div>
+    <div class="hint" id="hint">&nbsp;</div>
+  </div>
+
+  <!-- output (toggle) — sits under recognised letter -->
+  <div class="card outputCard a-full">
+    <h2>Output</h2>
+    <div class="output" id="out"></div>
+    <div class="row" style="margin-top:10px"><button id="space">Space</button><button id="back">⌫</button><button id="clear">Clear</button></div>
+  </div>
+
+  <!-- ML pipeline -->
+  <div class="card pipe a-pipe">
+    <h2>Model pipeline</h2>
+    <div class="prow">
+      <div class="node" id="pn0"><span class="dot"></span>Camera</div><div class="pline"></div>
+      <div class="node" id="pn1"><span class="dot"></span>Landmarks</div><div class="pline"></div>
+      <div class="node" id="pn2"><span class="dot"></span>Features</div><div class="pline"></div>
+      <div class="node" id="pn3"><span class="dot"></span>Classify</div>
+    </div>
+    <div class="pstat" id="pstat">waiting…</div>
+  </div>
+
+  <!-- help title (recognise) -->
+  <div class="helpTitle only-recog a-help"><div class="t">Help us make ISHAARA more accurate</div><div class="s">Every sample improves recognition</div></div>
+
+  <!-- dashboard + progress (recognise) -->
+  <div class="card a-dash only-recog" id="dashCard">
+    <h2>All letters <span id="dashTotal" style="font-weight:400;text-transform:none;color:var(--muted)"></span></h2>
+    <div class="grid" id="dashGrid"></div>
+    <div class="prog"><div class="lab"><span>Progress to goal</span><span id="goalTxt"></span></div><div class="obar"><i id="overallBar"></i></div></div>
+  </div>
+
+  <!-- history (collect) -->
+  <div class="card only-collect a-hist">
+    <h2>Recent samples <span style="display:flex;gap:6px"><button id="undoBtn" style="flex:none;padding:7px 12px;font-size:12px">Undo last</button><button id="exportBtn" style="flex:none;padding:7px 12px;font-size:12px">Export</button></span></h2>
+    <div id="history"><div class="empty">No samples captured yet.</div></div>
+  </div>
+
+  <!-- publish (studio) -->
+  <div class="card studio-only a-full" id="publishCard">
+    <h2>Publish to site</h2>
+    <div class="row"><div style="flex:1"><input id="ghOwner" placeholder="github username" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div><div style="flex:1"><input id="ghRepo" placeholder="repository" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div></div>
+    <div class="row" style="margin-top:8px"><div style="flex:1"><input id="ghBranch" placeholder="branch (main)" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div><div style="flex:1"><input id="ghToken" type="password" placeholder="token (stays on device)" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:14px"></div></div>
+    <div class="row" style="margin-top:8px"><button class="primary" id="publishBtn" style="flex:1">Publish dataset to site</button></div>
+    <div class="status" id="pubStatus" style="text-align:left;margin-top:8px">Token is stored only in this browser.</div>
+  </div>
+  </div><!-- /app -->
+
+  <div class="status" id="status">Loading…</div>
+
+  <!-- footer -->
+  <div class="footer">
+    <div class="love">Made with ♥ by <b>12S3</b></div>
+    <div class="credit">Built with Claude Code · Google MediaPipe</div>
+  </div>
+</div>
+
+<div id="setPop" class="modal"><div class="sheet">
+  <div class="modalh">Settings <button class="x" id="setClose">✕</button></div>
+  <div class="sw"><span>Show output text</span><label class="tg"><input type="checkbox" id="outputOn"><span class="sl"></span></label></div>
+  <div class="sw"><span>Enable fili (MVSL vowel gestures)</span><label class="tg"><input type="checkbox" id="filiOn"><span class="sl"></span></label></div>
+  <div class="sw"><span>Swap L / R direction</span><label class="tg"><input type="checkbox" id="swapLR"><span class="sl"></span></label></div>
+  <div class="sw"><span>Show full camera view (no crop)</span><label class="tg"><input type="checkbox" id="fitOn"><span class="sl"></span></label></div>
+  <div style="margin-top:12px"><div style="font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px">Update log</div><div id="updateLog" class="loglist"><div class="empty">No updates yet.</div></div></div>
+</div></div>
+
+<div id="overlay">
+  <div class="logo"><img src="ishaara-logo.png" alt="ISHAARA" class="logoimg-big" onerror="this.style.display='none';this.parentNode.classList.add('nofile')"><div class="en">ISHAARA</div><div class="dv"><b>އިޝާރާ</b></div></div>
+  <p id="ovtext">Live Dhivehi fingerspelling, recognised from your camera. Everything runs on your device.</p>
+  <button id="start" class="primary" disabled>Allow camera</button>
+  <div class="status" id="ovstatus">Loading…</div>
+</div>
+
+<script>
+const PREVIEW = location.search.includes('preview');
+const STUDIO = new URLSearchParams(location.search).has('studio');
+const MOBILE = matchMedia('(max-width:640px)').matches || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const TARGET = 300, GOAL = 24*TARGET;
+const LETTERS=[['ހ','haa'],['ށ','shaviyani'],['ނ','noonu'],['ރ','raa'],['ބ','baa'],['ޅ','lhaviyani'],
+  ['ކ','kaafu'],['އ','alifu'],['ވ','vaavu'],['މ','meemu'],['ފ','faafu'],['ދ','dhaalu'],['ތ','thaa'],
+  ['ލ','laamu'],['ގ','gaafu'],['ޏ','gnaviyani'],['ސ','seenu'],['ޑ','daviyani'],['ޒ','zaviyani'],
+  ['ޓ','taviyani'],['ޔ','yaa'],['ޕ','paviyani'],['ޖ','javiyani'],['ޗ','chaviyani']];
+const NAME2CH=Object.fromEntries(LETTERS.map(([c,n])=>[n,c]));
+// trained fili "mode" poses — collected like letters so the model recognises them reliably
+const SPECIAL=[['_filiV','✌','V · long vowels'],['_filiC','◖','C · oa']];
+const SPECMAP=Object.fromEntries(SPECIAL.map(([l,g,nm])=>[l,{g,nm}]));
+function isSpec(name){ return !!SPECMAP[name]; }
+function glyphFor(name){ return NAME2CH[name] || (SPECMAP[name]&&SPECMAP[name].g) || ''; }
+function nameLabel(name){ return SPECMAP[name]?SPECMAP[name].nm:name; }
+const FILI=[['a','ަ'],['aa','ާ'],['i','ި'],['ee','ީ'],['u','ު'],['oo','ޫ'],['e','ެ'],['ey','ޭ'],['o','ޮ'],['oa','ޯ'],['sukun','ް'],['—','']];
+// consonant hand + move  → short vowels
+const shortFili={up:'ަ',down:'ި',left:'ެ',right:'ު'};   // a, i, e, u
+// switch to sideways "V" (peace) + move → long vowels
+const longFili={up:'ާ',down:'ީ',left:'ޭ',right:'ޫ'};    // aa, ee, ey, oo
+const SUKUN='ް', OFILI='ޮ', OAFILI='ޯ';                  // toward=sukun, away=o, C-shape+up=oa
+const AR={up:'▲',down:'▼',left:'◀',right:'▶',none:'·',in:'⊕',out:'⊖'};
+const $=id=>document.getElementById(id);
+const video=$('video'),cv=$('cv'),ctx=cv.getContext('2d');
+const filiOn=$('filiOn'),outputOn=$('outputOn'),swapLR=$('swapLR'),fitOn=$('fitOn');
+const chip=$('chip'),glyph=$('glyph'),nowlabel=$('nowlabel'),nowsub=$('nowsub'),conf=$('conf'),ar=$('ar'),dirlb=$('dirlb'),hint=$('hint'),outEl=$('out');
+const statusEl=$('status'),ovstatus=$('ovstatus'),overlay=$('overlay'),startBtn=$('start'),pstat=$('pstat');
+function setStatus(t,e){ statusEl.textContent=t; statusEl.classList.toggle('err',!!e); ovstatus.textContent=t; }
+$('modeBadge').textContent = STUDIO?'studio':(PREVIEW?'preview':'demo');
+if(STUDIO) document.body.classList.add('studio');
+
+// ---------- data + history ----------
+const data={handshapes:[]}; let PUB=null, history=[];
+const DATA_V=2; try{ const s=localStorage.getItem('ishaara-data'); const o=s&&JSON.parse(s); if(o&&o.v===DATA_V){ if(o.handshapes) data.handshapes=o.handshapes; if(o.history) history=o.history; } }catch(e){}
+if(PREVIEW && !data.handshapes.length){ const seed={haa:210,noonu:300,shaviyani:145,raa:88,baa:40,kaafu:22}; for(const k in seed) for(let i=0;i<seed[k];i++) data.handshapes.push({label:k,feat:new Array(63).fill(0)});
+  history=[{label:'haa',n:30,t:Date.now()-9000},{label:'noonu',n:30,t:Date.now()-64000},{label:'raa',n:30,t:Date.now()-320000}]; }
+function persist(){ try{ localStorage.setItem('ishaara-data',JSON.stringify({v:DATA_V,handshapes:data.handshapes,history})); }catch(e){} }
+function counts(){ const c={}; data.handshapes.forEach(h=>c[h.label]=(c[h.label]||0)+1); return c; }
+
+// ---------- shared dataset (fetch fast, merge safely) ----------
+const REPO={owner:'yoosufabdulla',repo:'ISHAARA',branch:'main'};
+function shapeKey(h){ return h.label+'|'+h.feat.join(','); }
+function countsOf(arr){ const c={}; (arr||[]).forEach(h=>c[h.label]=(c[h.label]||0)+1); return c; }
+function describeDelta(before,after){ const cb=countsOf(before),ca=countsOf(after),parts=[]; Object.keys(ca).forEach(k=>{ const d=ca[k]-(cb[k]||0); if(d>0) parts.push('+'+d+' '+k); }); return parts.join(', '); }
+function b64dec(s){ try{ return decodeURIComponent(escape(atob((s||'').replace(/\s/g,'')))); }catch(e){ return ''; } }
+const RAW=`https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/${REPO.branch}/`;
+function timeAgo(ms){ if(!ms) return ''; const s=(Date.now()-ms)/1000; if(s<60) return 'just now'; if(s<3600) return (s/60|0)+'m ago'; if(s<86400) return (s/3600|0)+'h ago'; return new Date(ms).toLocaleDateString(); }
+let lastSeenUpdate=0; try{ lastSeenUpdate=+localStorage.getItem('ishaara-seen')||0; }catch(e){}
+function showUpdate(meta){ const el=$('updateNote'); if(!el||!meta||!meta.updatedAt) return;
+  const when=new Date(meta.updatedAt), tm=when.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const change=meta.lastChange&&meta.lastChange!=='no new samples' ? meta.lastChange : 'no new letters';
+  el.innerHTML='<span class="ic">✓</span><span>Shared data updated — <b>'+change+'</b> · '+(meta.total||0)+' samples total</span><span class="tm">'+tm+' · '+timeAgo(meta.updatedAt)+'</span><button class="upx" aria-label="Dismiss" onclick="this.parentNode.style.display=\'none\'">✕</button>';
+  el.style.display='flex'; }
+// persisted update log (shown in Settings)
+let updateLog=[]; try{ const a=JSON.parse(localStorage.getItem('ishaara-log')||'[]'); if(Array.isArray(a)) updateLog=a; }catch(e){}
+const loggedT=new Set(updateLog.map(e=>e.t));
+function renderLog(){ const el=$('updateLog'); if(!el) return; if(!updateLog.length){ el.innerHTML='<div class="empty">No updates yet.</div>'; return; }
+  el.innerHTML=updateLog.map(e=>'<div class="logrow"><span class="lg">'+(e.summary||'new samples')+'</span><span class="lt">'+new Date(e.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+'</span></div>').join(''); }
+function addLog(t,summary){ if(!t||loggedT.has(t)) return; loggedT.add(t); updateLog.unshift({t:t,summary:summary||'new samples'}); if(updateLog.length>100) updateLog.length=100; try{ localStorage.setItem('ishaara-log',JSON.stringify(updateLog)); }catch(e){} renderLog(); }
+// The model = base dataset.json + every small shard in /data. We only ever ADD samples
+// we don't already have, and publishing writes only the NEW samples as a fresh shard —
+// so uploads stay tiny and nobody overwrites anyone.
+const knownKeys=new Set();     // keys that exist in the shared model (base + shards)
+const haveKeys=new Set();      // keys currently in our in-memory model (prevents duplicates)
+const seenShards=new Set();    // shard filenames already merged
+let publishedKeys=new Set();   // our own samples already uploaded (persisted, so reload won't re-send)
+try{ const a=JSON.parse(localStorage.getItem('ishaara-pub')||'[]'); if(Array.isArray(a)) a.forEach(k=>publishedKeys.add(k)); }catch(e){}
+function persistPub(){ try{ localStorage.setItem('ishaara-pub',JSON.stringify([...publishedKeys])); }catch(e){} }
+let shardsETag=null, folderKnown=false;
+async function fetchJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(r.ok) return await r.json(); }catch(e){} return null; }
+function addSamples(arr){ let n=0; (arr||[]).forEach(h=>{ if(!h||!h.feat)return; const k=shapeKey(h); knownKeys.add(k); if(haveKeys.has(k))return; haveKeys.add(k); data.handshapes.push({label:h.label,feat:h.feat}); n++; }); return n; }
+// list /data (conditional → a 304 when nothing changed is free and doesn't touch the rate limit)
+async function listShards(conditional){ const h={Accept:'application/vnd.github+json'}; if(conditional&&shardsETag) h['If-None-Match']=shardsETag;
+  try{ const r=await fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/data?ref=${REPO.branch}`,{headers:h,cache:'no-store'});
+    if(r.status===304){ folderKnown=true; return {unchanged:true}; } if(r.status===404) return {files:[]};
+    if(r.ok){ folderKnown=true; const et=r.headers.get('etag'); if(et) shardsETag=et; const a=await r.json(); return {files:(Array.isArray(a)?a:[]).filter(f=>/\.json$/.test(f.name))}; }
+  }catch(e){} return {files:null}; }
+async function loadShared(initial){
+  if(initial){ data.handshapes.forEach(h=>{ if(h&&h.feat) haveKeys.add(shapeKey(h)); });
+    const base=await fetchJSON(RAW+'dataset.json?_='+Date.now())||await fetchJSON('dataset.json?_='+Date.now()); if(base&&base.handshapes) addSamples(base.handshapes); }
+  const lst=await listShards(!initial); if(lst.unchanged){ return; } if(!lst.files){ if(initial) refreshGrids(); return; }
+  const files=lst.files.slice().sort((a,b)=> a.name<b.name?-1:1);
+  let added=0,newestT=0,newestSummary='',newShards=0;
+  for(const f of files){ if(seenShards.has(f.name)) continue; seenShards.add(f.name);
+    const o=await fetchJSON(f.download_url||RAW+'data/'+f.name); if(!o) continue;
+    added+=addSamples(o.added||o.handshapes||[]);
+    const t=o.updatedAt||0; if(t){ addLog(t,o.summary||o.lastChange||'new samples'); }
+    if(t>newestT){ newestT=t; newestSummary=o.summary||o.lastChange||''; }
+    if(t>lastSeenUpdate) newShards++;
+  }
+  if(added||initial) refreshGrids();
+  if(newestT && newestT>lastSeenUpdate){
+    const summary = newShards<=1 ? (newestSummary||'new samples') : (newShards+' new uploads');
+    showUpdate({updatedAt:newestT,lastChange:summary,total:data.handshapes.length});
+    lastSeenUpdate=newestT; try{localStorage.setItem('ishaara-seen',String(newestT));}catch(e){}
+  }
+}
+// poll fast (20s) once the data folder exists; slower (90s) before anyone has published, to stay well under rate limits
+function startSharedPolling(){ (function loop(){ setTimeout(async()=>{ if(!document.hidden){ try{ await loadShared(false); }catch(e){} } loop(); }, folderKnown?20000:90000); })(); }
+
+// ---------- recognition ----------
+const K=5,MAXDIST=2.0;
+function recognize(feat){ const set=data.handshapes,n=set.length; if(!n) return null;
+  const a=new Array(n); for(let i=0;i<n;i++){ const g=set[i].feat; let s=0; for(let j=0;j<63;j++){const d=feat[j]-g[j]; s+=d*d;} a[i]={d:Math.sqrt(s),l:set[i].label}; }
+  a.sort((x,y)=>x.d-y.d); if(a[0].d>MAXDIST) return {label:null,conf:0};
+  const kk=Math.min(K,n),v={}; for(let i=0;i<kk;i++) v[a[i].l]=(v[a[i].l]||0)+1;
+  let best=null,bc=0; for(const l in v) if(v[l]>bc){bc=v[l];best=l;}
+  let din=Infinity,dout=Infinity; for(let i=0;i<n;i++){ if(a[i].l===best){ if(a[i].d<din)din=a[i].d; } else if(a[i].d<dout) dout=a[i].d; }
+  return {label:best, conf: isFinite(dout)?dout/(din+dout):1}; }
+function aspect(){ return (video.videoWidth&&video.videoHeight)?video.videoWidth/video.videoHeight:1; }
+function feats(lm){ const A=aspect(); const v=lm.map(p=>[(p.x-lm[0].x)*A,-(p.y-lm[0].y),-(p.z-lm[0].z)]); const r=Math.hypot(v[9][0],v[9][1],v[9][2])||1e-3; const f=[]; v.forEach(p=>f.push(p[0]/r,p[1]/r,p[2]/r)); return f; }
+function dirPoint(lm){ const A=aspect(); const hx=(swapLR.checked?(1-lm[0].x):lm[0].x)*A, hy=1-lm[0].y; const sz=Math.hypot((lm[9].x-lm[0].x)*A,lm[9].y-lm[0].y)||1e-3; return [hx/sz,hy/sz]; }
+
+// ---------- ML pipeline viz ----------
+function setPipe(active, text){ for(let i=0;i<4;i++) $('pn'+i).classList.toggle('on', i<active); if(text!==undefined) pstat.innerHTML=text; }
+
+// ---------- letter grids (recognise dashboard + collect capture selector) ----------
+let curLetter='haa', litName=null; const dashChips={};
+function fillGrid(container,{selectable=false,store=false,specials=false,totalEl=null,barEl=null,goalEl=null}={}){
+  container.innerHTML=''; if(store) for(const k in dashChips) delete dashChips[k];
+  const c=counts(); let total=0,done=0;
+  LETTERS.forEach(([ch,n])=>{ const v=c[n]||0; total+=v; if(v>=TARGET)done++;
+    const d=document.createElement('div'); d.className='cchip'+(selectable&&n===curLetter?' sel':'')+(v>=TARGET?' done':'');
+    d.innerHTML=`<div class="ch">${ch}</div><div class="n">${v}</div><div class="bar" style="width:${Math.min(100,v/TARGET*100)}%"></div>`;
+    if(selectable) d.onclick=()=>{ curLetter=n; $('capLetter').textContent=n; refreshGrids(); };
+    container.appendChild(d); if(store) dashChips[n]=d; });
+  if(specials){ SPECIAL.forEach(([lab,g,nm])=>{ const v=c[lab]||0;
+    const d=document.createElement('div'); d.className='cchip spec'+(selectable&&lab===curLetter?' sel':'');
+    d.innerHTML=`<div class="ch">${g}</div><div class="n">${v}</div><div class="bar" style="width:${Math.min(100,v/TARGET*100)}%"></div>`;
+    if(selectable) d.onclick=()=>{ curLetter=lab; $('capLetter').textContent=nameLabel(lab); refreshGrids(); };
+    container.appendChild(d); }); }
+  if(totalEl) totalEl.textContent=`· ${done}/24 at goal`;
+  if(barEl) barEl.style.width=Math.min(100,total/GOAL*100)+'%';
+  if(goalEl) goalEl.textContent=`${total.toLocaleString()} / ${GOAL.toLocaleString()}`;
+}
+function devCounts(){ let m=0,d=0; data.handshapes.forEach(h=>{ if(h.dev==='m')m++; else d++; }); return {m,d}; }
+function refreshGrids(){
+  if($('dashGrid')) fillGrid($('dashGrid'),{store:true,totalEl:$('dashTotal'),barEl:$('overallBar'),goalEl:$('goalTxt')});
+  if($('capGrid')){ fillGrid($('capGrid'),{selectable:true,specials:true,totalEl:$('capTotal'),barEl:$('capBar'),goalEl:$('goalTxt2')});
+    const dc=devCounts(); if($('capTotal')) $('capTotal').textContent += `  ·  📱 ${dc.m}  💻 ${dc.d}`; }
+  if($('selGlyph')){ $('selGlyph').textContent=glyphFor(curLetter); $('selName').textContent=nameLabel(curLetter); }
+  if(litName&&dashChips[litName]) dashChips[litName].classList.add('lit');
+}
+function lightUp(name){ if(name===litName) return; if(litName&&dashChips[litName]) dashChips[litName].classList.remove('lit'); litName=name; if(name&&dashChips[name]) dashChips[name].classList.add('lit'); }
+
+// ---------- history ----------
+function timeAgo(t){ const s=(Date.now()-t)/1000; if(s<60)return Math.floor(s)+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; return Math.floor(s/3600)+'h ago'; }
+function renderHistory(){ const h=$('history'); if(!history.length){ h.innerHTML='<div class="empty">No samples captured yet.</div>'; return; }
+  h.innerHTML=history.slice(0,7).map(e=>`<div class="hrow"><div class="hg">${NAME2CH[e.label]||''}</div><div class="hn">${e.label}</div><div class="hc">+${e.n}</div><div class="ht">${timeAgo(e.t)}</div></div>`).join(''); }
+setInterval(renderHistory,12000);
+
+// ---------- toggles + tabs ----------
+outputOn.onchange=()=>document.body.classList.toggle('show-output',outputOn.checked);
+try{ if(localStorage.getItem('ishaara-fit')==='1'){ fitOn.checked=true; document.body.classList.add('fit-contain'); } }catch(e){}
+fitOn.onchange=()=>{ document.body.classList.toggle('fit-contain',fitOn.checked); try{ localStorage.setItem('ishaara-fit',fitOn.checked?'1':'0'); }catch(e){} };
+$('cogBtn').onclick=()=>$('setPop').classList.add('open');
+$('setClose').onclick=()=>$('setPop').classList.remove('open');
+$('setPop').onclick=e=>{ if(e.target===$('setPop')) $('setPop').classList.remove('open'); };
+function setTab(t){ document.body.classList.toggle('tab-recog',t==='recog'); document.body.classList.toggle('tab-collect',t==='collect'); $('tabRecog').classList.toggle('on',t==='recog'); $('tabCollect').classList.toggle('on',t==='collect'); if(t!=='recog') lightUp(null); refreshGrids(); }
+$('tabRecog').onclick=()=>setTab('recog'); $('tabCollect').onclick=()=>setTab('collect');
+
+// ---------- collect ----------
+let latest=null,shapeCap=null;
+function doCapture(){ if(shapeCap) return; if(!latest){ setStatus('No hand visible — hold your hand up.',true); return; } shapeCap={label:curLetter,left:30,got:0,refs:[]}; }
+$('cap').onclick=doCapture; $('shutter').onclick=e=>{ e.stopPropagation(); doCapture(); };
+function collectFrame(lm){ if(!shapeCap)return; const s={label:shapeCap.label,feat:feats(lm),dev:MOBILE?'m':'d'}; data.handshapes.push(s); haveKeys.add(shapeKey(s)); shapeCap.refs.push(s); shapeCap.got++;
+  setPipe(4,`receiving frame <b>${shapeCap.got}/30</b> · 21 landmarks ✓ · extracting 63 features · classifying (k-NN)…`);
+  if(--shapeCap.left<=0){ const lab=shapeCap.label, refs=shapeCap.refs; shapeCap=null; history.unshift({label:lab,n:refs.length,t:Date.now(),refs}); persist(); refreshGrids(); renderHistory();
+    setPipe(4,`received 30 frames → features extracted → saved <b>${lab}</b> ×30 → dataset updated ✓`); setStatus('Saved 30 for “'+lab+'”.'); } }
+$('exportBtn').onclick=(e)=>{ e.stopPropagation&&e.stopPropagation(); const b=new Blob([JSON.stringify({handshapes:data.handshapes})],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ishaara-dataset.json'; a.click(); };
+$('undoBtn').onclick=()=>{ if(!history.length){ setStatus('Nothing to undo.'); return; } const e=history.shift();
+  const refs=e.refs&&e.refs.length?e.refs:null; let removed=0;
+  if(refs){ refs.forEach(s=>{ const i=data.handshapes.indexOf(s); if(i>=0){ data.handshapes.splice(i,1); removed++; } haveKeys.delete(shapeKey(s)); }); }
+  else { const n=Math.min(e.n||0,data.handshapes.length); data.handshapes.splice(data.handshapes.length-n,n); removed=n; }
+  persist(); refreshGrids(); renderHistory(); setStatus('Removed last capture: '+e.label+' ×'+removed+'.'); };
+
+// ---------- recognizer state machine ----------
+const P={lockConf:0.7,stableN:5,lockStillVel:0.09,dirR:0.52,keepR:0.30,dropR:0.18,zoneDwellMs:900,depthIn:1.28,depthOut:0.80,depthKeepIn:1.13,depthKeepOut:0.90,depthDwellMs:950,bareDwellMs:1600,cooldownMs:600,handGraceMs:350};
+let holdFrac=0,holdArrow='·',activeDir=null,activeDepth=null,lastHandAt=0,modeCand=null,modeCandN=0,stableMode='short';
+let phase='idle',lastLabel=null,stableCount=0,locked=null,prevPos=null,vel=0,cooldownUntil=0,anchor=null,zone=null,zoneSince=0,anchorPx=null,anchorHandPx=1,rawAnchor=null,anchorHS=1,smoothDX=null,smoothDY=null,smoothScale=null,curW=0,curH=0,word='';
+function render(){ outEl.textContent=word; }
+$('space').onclick=()=>{word+=' ';render();}; $('back').onclick=()=>{word=[...word].slice(0,-1).join('');render();}; $('clear').onclick=()=>{word='';render();};
+function setPhase(p){ phase=p; chip.textContent=p; chip.className='chip'+(p==='locked'?' ok':''); }
+function nameFor(ch){ const f=FILI.find(x=>x[1]===ch); return f?f[0]:'none'; }
+function resetRec(){ phase='idle';locked=null;anchor=null;anchorPx=null;zone=null;stableCount=0;lastLabel=null;smoothDX=smoothDY=smoothScale=null;holdFrac=0;holdArrow='·';activeDir=null;activeDepth=null;modeCand=null;modeCandN=0;stableMode='short';conf.style.width='0'; }
+function dominant(dx,dy){ return Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'up':'down'); }
+// sticky direction: once picked it holds through wobble; only a clear, stronger move elsewhere switches it
+function pickDir(dx,dy){ const mm=Math.hypot(dx,dy);
+  if(mm<P.dropR){ activeDir=null; return null; }           // only release once well back toward centre
+  if(!activeDir){ return mm>=P.dirR?(activeDir=dominant(dx,dy)):null; }
+  if(mm>=P.dirR){ const nd=dominant(dx,dy),ax=Math.abs(dx),ay=Math.abs(dy); if(nd!==activeDir&&Math.max(ax,ay)>Math.min(ax,ay)*1.6) activeDir=nd; }
+  return activeDir; }
+function commitFili(fchar,desc){ const c=NAME2CH[locked]||'?'; word += c + ((filiOn.checked&&fchar)?fchar:''); render(); hint.textContent='added '+locked+(desc?' + '+desc:''); resetRec(); setPhase('cooldown'); cooldownUntil=performance.now()+P.cooldownMs; }
+function updateNow(pr){
+  if(pr===null){ glyph.textContent='—'; nowlabel.textContent='no data yet'; nowsub.innerHTML='&nbsp;'; conf.style.width='0'; lightUp(null); return; }
+  if(!pr.label){ glyph.textContent='?'; nowlabel.textContent='unknown shape'; nowsub.innerHTML='&nbsp;'; conf.style.width='0'; lightUp(null); return; }
+  if(isSpec(pr.label)){ glyph.textContent=SPECMAP[pr.label].g; nowlabel.textContent=nameLabel(pr.label); nowsub.textContent='fili mode'; conf.style.width=(pr.conf*100)+'%'; lightUp(null); return; }
+  glyph.textContent=NAME2CH[pr.label]||'—'; nowlabel.textContent=pr.label; nowsub.textContent='confidence '+(pr.conf*100).toFixed(0)+'%'; conf.style.width=(pr.conf*100)+'%'; lightUp(pr.label);
+}
+function step(lm,now){
+  const pos=dirPoint(lm); if(prevPos){ const d=Math.hypot(pos[0]-prevPos[0],pos[1]-prevPos[1]); vel=vel*0.5+d*0.5; } prevPos=pos;
+  const pr=recognize(feats(lm)); updateNow(pr);
+  if(!shapeCap){ if(pr&&pr.label) setPipe(4,`frame ✓ · 21 landmarks ✓ · 63 features ✓ · classified <b>${pr.label}</b> (${(pr.conf*100)|0}%)`);
+    else if(data.handshapes.length) setPipe(3,'frame ✓ · 21 landmarks ✓ · 63 features ✓ · classifying (k-NN)…');
+    else setPipe(2,'frame ✓ · 21 landmarks ✓ · model has no samples yet'); }
+  if(phase==='cooldown'){ dirlb.textContent='…'; ar.textContent='·'; if(now>cooldownUntil) setPhase('idle'); return; }
+  if(!pr||!pr.label){ hint.textContent = data.handshapes.length?'hold a learned handshape':'no samples yet — collect some'; return; }
+  if(pr.label===lastLabel) stableCount++; else{ stableCount=0; lastLabel=pr.label; }
+  if(phase==='idle'){ dirlb.textContent='shape'; ar.textContent='·'; hint.textContent='hold the handshape steady…';
+    if(pr.conf>=P.lockConf&&stableCount>=P.stableN&&vel<P.lockStillVel&&!isSpec(pr.label)&&NAME2CH[pr.label]){ locked=pr.label; anchor=pos.slice(); zone=null; smoothDX=smoothDY=smoothScale=null; activeDir=null; activeDepth=null; modeCand=null; modeCandN=0; stableMode='short'; setPhase('locked');
+      anchorPx=[mapX(lm[0]),mapY(lm[0])]; anchorHandPx=Math.hypot(mapX(lm[9])-mapX(lm[0]),mapY(lm[9])-mapY(lm[0]))||1;
+      rawAnchor=[lm[0].x,lm[0].y]; anchorHS=Math.hypot((lm[9].x-lm[0].x)*aspect(),(lm[9].y-lm[0].y))||1e-3; } }
+  else if(phase==='locked'){
+    // fili off → just hold to add the bare consonant
+    if(!filiOn.checked){ ar.textContent='·'; dirlb.textContent='hold'; holdArrow='·';
+      if(vel<P.lockStillVel){ if(zone!=='bare'){zone='bare';zoneSince=now;} const h=now-zoneSince; holdFrac=Math.min(1,h/P.bareDwellMs); conf.style.width=(holdFrac*100)+'%'; hint.textContent=`hold to add ${locked}`; if(h>=P.bareDwellMs) commitFili('',''); } else { zone=null; holdFrac=0; conf.style.width='0'; } return; }
+    const A=aspect();
+    // smoothed wrist displacement from lock point, in hand-widths (size-independent)
+    let dx=((lm[0].x-rawAnchor[0])*(swapLR.checked?-1:1))*A/anchorHS, dy=(rawAnchor[1]-lm[0].y)/anchorHS;
+    smoothDX=smoothDX==null?dx:smoothDX*0.5+dx*0.5; smoothDY=smoothDY==null?dy:smoothDY*0.5+dy*0.5; dx=smoothDX; dy=smoothDY;
+    const hs=Math.hypot((lm[9].x-lm[0].x)*A,(lm[9].y-lm[0].y))||1e-3; let sc=hs/anchorHS; smoothScale=smoothScale==null?sc:smoothScale*0.6+sc*0.4; sc=smoothScale;
+    const m=Math.hypot(dx,dy);
+    if(m<P.dropR) activeDir=null;
+    // MODE from the trained pose, debounced over a few frames so a 1-frame misread can't flicker it
+    const modeRaw = (pr.label==='_filiV'&&pr.conf>=0.45)?'long' : (pr.label==='_filiC'&&pr.conf>=0.45)?'oa' : 'short';
+    if(modeRaw===modeCand){ if(++modeCandN>=3) stableMode=modeRaw; } else { modeCand=modeRaw; modeCandN=1; }
+    const mode=stableMode;
+    // pick a single target {key, char, name, arrow, ms}, latched so small drift won't cancel it
+    let t=null;
+    if(mode==='oa'){ if(pickDir(dx,dy)==='up') t={key:'oa',c:OAFILI,nm:'oa',ar:AR.up,ms:P.zoneDwellMs}; }
+    else if(mode==='long'){ const d=pickDir(dx,dy); if(d) t={key:'L'+d,c:longFili[d],nm:nameFor(longFili[d]),ar:AR[d],ms:P.zoneDwellMs}; }
+    else { // short
+      if(m<P.keepR){ // near centre → toward/away = sukun/o (also latched)
+        if(activeDepth==='sukun'&&sc>=P.depthKeepIn){} else if(activeDepth==='o'&&sc<=P.depthKeepOut){} else activeDepth=(sc>=P.depthIn?'sukun':sc<=P.depthOut?'o':null);
+        if(activeDepth==='sukun') t={key:'sukun',c:SUKUN,nm:'sukun',ar:AR.in,ms:P.depthDwellMs};
+        else if(activeDepth==='o') t={key:'o',c:OFILI,nm:'o',ar:AR.out,ms:P.depthDwellMs};
+      } else activeDepth=null;
+      if(!t){ const d=pickDir(dx,dy); if(d) t={key:'S'+d,c:shortFili[d],nm:nameFor(shortFili[d]),ar:AR[d],ms:P.zoneDwellMs}; }
+    }
+    if(t){ ar.textContent=t.ar; holdArrow=t.ar; dirlb.textContent=t.nm; if(zone!==t.key){zone=t.key;zoneSince=now;} const h=now-zoneSince; holdFrac=Math.min(1,h/t.ms); conf.style.width=(holdFrac*100)+'%'; hint.textContent='hold → '+locked+' + '+t.nm; if(h>=t.ms) commitFili(t.c,t.nm); return; }
+    // moving but not far enough yet
+    if(m>=P.keepR){ ar.textContent='·'; holdArrow='·'; dirlb.textContent=mode==='long'?'V move':(mode==='oa'?'C up':'move'); holdFrac=Math.min(1,m/P.dirR); conf.style.width=(holdFrac*100)+'%'; hint.textContent=mode==='long'?'move a direction for a long vowel':(mode==='oa'?'move up for “oa”':'move a direction, then hold'); zone='arm'; return; }
+    // resting at centre → hold for the bare consonant
+    ar.textContent='·'; holdArrow='·'; dirlb.textContent='hold'; if(zone!=='bare'){zone='bare';zoneSince=now;} const h=now-zoneSince; holdFrac=Math.min(1,h/P.bareDwellMs); conf.style.width=(holdFrac*100)+'%'; hint.textContent='move a/i/e/u · toward/away = sukun/o · V or C to switch · hold = bare '+locked; if(h>=P.bareDwellMs) commitFili('','');
+  }
+}
+
+// ---------- drawing ----------
+const EDGES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+let mapX=p=>0, mapY=p=>0, mirror=true;  // cover-aware landmark→canvas mapping (keeps overlay aligned when cropped)
+function draw(lm){ const w=cv.width=cv.clientWidth,h=cv.height=cv.clientHeight; curW=w;curH=h; ctx.clearRect(0,0,w,h);
+  const vw=video.videoWidth||16,vh=video.videoHeight||9,s=(document.body.classList.contains('fit-contain')?Math.min(w/vw,h/vh):Math.max(w/vw,h/vh)),dw=vw*s,dh=vh*s,ox=(w-dw)/2,oy=(h-dh)/2;
+  mapX = mirror ? (p=>ox+(1-p.x)*dw) : (p=>ox+p.x*dw); mapY=p=>oy+p.y*dh;
+  if(!lm)return; const X=mapX,Y=mapY;
+  ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=3; EDGES.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(X(lm[a]),Y(lm[a]));ctx.lineTo(X(lm[b]),Y(lm[b]));ctx.stroke();});
+  ctx.fillStyle='#fff'; lm.forEach(p=>{ctx.beginPath();ctx.arc(X(p),Y(p),3.4,0,7);ctx.fill();}); }
+// fixed opaque direction pad (bottom-right) + a hold ring around the centre arrow while holding
+function updatePad(){ const pad=$('filiPad'); if(!pad) return;
+  let dir=null; if(zone&&(zone[0]==='S'||zone[0]==='L')) dir=zone.slice(1); else if(zone==='oa') dir='up'; else if(zone==='sukun'||zone==='o') dir='mid';
+  pad.querySelectorAll('.fp').forEach(el=>{ const on=!!dir&&el.classList.contains(dir); el.classList.toggle('act',on); el.style.setProperty('--p', on?Math.min(1,holdFrac).toFixed(3):'0'); }); }
+function drawGuide(lm){
+  const active = phase==='locked'&&filiOn.checked;
+  const cue=$('filiCue'); if(cue) cue.classList.toggle('on', active && holdArrow==='·' && holdFrac<0.4);
+  const pad=$('filiPad'); if(pad){ pad.classList.toggle('on', active); if(active) updatePad(); }
+  if(!active) return;
+  const w=cv.width,h=cv.height, cx=w/2, cy=h*0.30, u=Math.min(w,h);
+  if(holdArrow&&holdArrow!=='·'){
+    ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineCap='round';
+    const R=u*0.10; ctx.lineWidth=Math.max(5,R*0.16);
+    ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle='#6bf61d'; ctx.beginPath(); ctx.arc(cx,cy,R,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,holdFrac)); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.96)'; ctx.font='700 '+Math.round(R*0.95)+'px system-ui,-apple-system,sans-serif'; ctx.fillText(holdArrow,cx,cy+1);
+    ctx.restore();
+  } }
+
+// ---------- publish (studio) ----------
+if(STUDIO){
+  const gf={owner:$('ghOwner'),repo:$('ghRepo'),branch:$('ghBranch'),token:$('ghToken')};
+  const KEY={owner:'gh_owner',repo:'gh_repo',branch:'gh_branch',token:'gh_token'};
+  Object.keys(gf).forEach(k=>{ try{ gf[k].value=localStorage.getItem(KEY[k])||''; }catch(e){} });
+  if(!gf.owner.value) gf.owner.value='yoosufabdulla';
+  if(!gf.repo.value) gf.repo.value='ISHAARA';
+  if(!gf.branch.value) gf.branch.value='main';
+  const pst=$('pubStatus'); function pset(t,c){ pst.textContent=t; pst.className='status'+(c?' '+c:''); pst.style.textAlign='left'; }
+  const b64=s=>btoa(unescape(encodeURIComponent(s)));
+  $('publishBtn').onclick=async()=>{ const owner=gf.owner.value.trim(),repo=gf.repo.value.trim(),branch=gf.branch.value.trim()||'main',token=gf.token.value.trim();
+    if(!owner||!repo||!token){ pset('Enter username, repo, and token.','err'); return; }
+    Object.keys(gf).forEach(k=>{ try{ localStorage.setItem(KEY[k],gf[k].value.trim()); }catch(e){} });
+    // make sure we have the latest base + shards so "new" is computed against live data
+    pset('Publishing… checking for new samples');
+    try{ await loadShared(true); }catch(e){}
+    // only samples not already in the shared model and not already uploaded by us
+    const fresh=data.handshapes.filter(h=>h&&h.feat&&!knownKeys.has(shapeKey(h))&&!publishedKeys.has(shapeKey(h)));
+    if(!fresh.length){ pset('Already up to date — nothing new to publish.','ok'); return; }
+    const summary=describeDelta([],fresh);   // e.g. "+100 shaviyani"
+    const name='data/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.json';
+    const payload={v:DATA_V,updatedAt:Date.now(),device:(MOBILE?'mobile':'desktop'),summary,added:fresh.map(h=>({label:h.label,feat:h.feat}))};
+    const api=`https://api.github.com/repos/${owner}/${repo}/contents/${name}`, headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json'};
+    pset('Publishing '+fresh.length+' new sample'+(fresh.length>1?'s':'')+'…');
+    try{
+      const body={message:'Add samples — '+summary,content:b64(JSON.stringify(payload)),branch};
+      const p=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+      if(p.ok){
+        fresh.forEach(h=>{ const k=shapeKey(h); knownKeys.add(k); publishedKeys.add(k); }); persistPub(); seenShards.add(name.replace('data/',''));
+        pset('Published ✓ — '+summary+' ('+fresh.length+' new). Live in a few seconds.','ok');
+        showUpdate({updatedAt:payload.updatedAt,lastChange:summary,total:data.handshapes.length}); addLog(payload.updatedAt,summary);
+        lastSeenUpdate=payload.updatedAt; try{localStorage.setItem('ishaara-seen',String(lastSeenUpdate));}catch(e){}
+      } else { const e=await p.json().catch(()=>({})); pset('Failed: '+(e.message||p.status),'err'); }
+    }catch(err){ pset('Network error: '+err.message,'err'); } };
+}
+
+// ---------- background streams ----------
+(function(){ const bg=$('bg'); if(!bg) return; const chars=LETTERS.map(l=>l[0]);
+  const field=document.createElement('div'); field.className='field'; bg.appendChild(field);
+  const cover=(innerWidth+innerHeight)/1.414;
+  const STREAMS=Math.min(MOBILE?26:50, Math.ceil(cover/46)+3);
+  const lh=36, PER=Math.min(MOBILE?60:90, Math.ceil(2.0*Math.max(innerWidth,innerHeight)/lh)+5);
+  for(let i=0;i<STREAMS;i++){ const st=document.createElement('div'); st.className='stream'; const col=document.createElement('div'); col.className='col';
+    col.style.animationDuration=(28+Math.random()*22).toFixed(1)+'s'; col.style.animationDelay=(-Math.random()*30).toFixed(1)+'s';
+    let s=''; for(let j=0;j<PER;j++){ const cls=(Math.random()<0.5?'p':'o')+(Math.random()<0.1?' gl':''); const d=(Math.random()*3.2).toFixed(2); s+='<span class="'+cls+'" style="animation-delay:-'+d+'s">'+chars[(Math.random()*chars.length)|0]+'</span>'; } col.innerHTML=s+s; st.appendChild(col); field.appendChild(st); } })();
+
+// ---------- MediaPipe + camera ----------
+let hands,running=false,sending=false;
+function onResults(res){ const has=res.multiHandLandmarks&&res.multiHandLandmarks.length; const lm=has?res.multiHandLandmarks[0]:null; latest=lm; draw(lm);
+  const now=performance.now(); if(lm) lastHandAt=now;
+  $('cap').disabled=!has; if($('shutter')) $('shutter').disabled=!has;
+  if(!lm){
+    // brief tracking dropout: keep a locked fili gesture (and its overlay) alive for a short grace so nothing flickers
+    if(phase==='locked'&&filiOn.checked&&!shapeCap&&(now-lastHandAt)<P.handGraceMs){ drawGuide(null); return; }
+    glyph.textContent='—'; nowlabel.textContent='show your hand'; conf.style.width='0'; prevPos=null; ar.textContent='·'; dirlb.textContent='—'; lightUp(null); { const c=$('filiCue'); if(c) c.classList.remove('on'); const p=$('filiPad'); if(p) p.classList.remove('on'); } if(!shapeCap) setPipe(1,'camera on · waiting for a hand in the frame…'); if(phase==='locked'){resetRec(); hint.textContent='lock cancelled';} return; }
+  if(shapeCap) collectFrame(lm);
+  step(lm,now); drawGuide(lm);
+}
+async function pump(){ if(running&&!sending&&video.readyState>=2){ sending=true; try{ await hands.send({image:video}); }catch(e){} sending=false; } requestAnimationFrame(pump); }
+function loadScript(urls){return new Promise((res,rej)=>{let i=0;const t=()=>{if(i>=urls.length)return rej(new Error('load fail'));const s=document.createElement('script');s.src=urls[i++];s.onload=()=>res();s.onerror=t;document.head.appendChild(s);};t();});}
+async function boot(){
+  refreshGrids(); renderHistory(); renderLog(); $('capLetter').textContent=curLetter; setPipe(1,'starting…');
+  if(PREVIEW){ $('previewNote').style.display='flex'; overlay.style.display='none'; setStatus('Preview mode'); setPipe(3,'preview — pipeline idle');
+    addLog(Date.now()-45000,'+100 shaviyani, +30 haa'); addLog(Date.now()-3600000,'+60 noonu'); addLog(Date.now()-90000000,'+40 raa');
+    if($('filiCue')) $('filiCue').classList.add('on');
+    if($('filiPad')){ $('filiPad').classList.add('on'); const u=$('filiPad').querySelector('.fp.up'); if(u){ u.classList.add('act'); u.style.setProperty('--p','0.6'); } }
+    showUpdate({updatedAt:Date.now()-45000,lastChange:'+100 shaviyani, +30 haa',total:data.handshapes.length}); return; }
+  try{ setStatus('Loading hand tracker…');
+    await loadScript(['https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js','https://unpkg.com/@mediapipe/hands/hands.js']);
+    hands=new window.Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+    hands.onResults(onResults);
+    try{ await loadShared(true); startSharedPolling(); }catch(e){}
+    setStatus('Ready — allow camera'); startBtn.disabled=false;
+  }catch(e){ $('ovtext').innerHTML='Could not load libraries — check your connection and reload.'; setStatus('Load failed',true); }
+}
+let facing='user';
+async function startStream(){ if(video.srcObject) video.srcObject.getTracks().forEach(t=>t.stop());
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream; await video.play(); mirror=(facing==='user'); video.style.transform=mirror?'scaleX(-1)':'scaleX(1)'; }
+startBtn.onclick=async()=>{ try{ setStatus('Starting camera…'); await startStream(); running=true; pump(); overlay.style.display='none'; setStatus('Camera on'); setPhase('idle'); render();
+}catch(e){ $('ovtext').innerHTML='Camera failed: '+e.message+'. Allow camera access and reload.'; setStatus('Camera error',true); } };
+async function flip(){ const prev=facing; facing=(facing==='user')?'environment':'user'; try{ await startStream(); }catch(e){ facing=prev; try{ await startStream(); }catch(_){}} }
+$('flipBtn').onclick=e=>{ e.stopPropagation(); flip(); };
+$('stageEl').onclick=()=>{ if(MOBILE && running && document.body.classList.contains('tab-recog')) flip(); };
+boot();
+</script>
+</body>
+</html>
